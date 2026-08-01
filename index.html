@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pistas e Ditados</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:#f0ede8; --paper:#faf9f6; --ink:#1e1a14; --ink2:#3a3428;
+  --muted:#8a8070; --line:#ddd8cc;
+  --green:#2e7d5e; --green-l:#e8f5ee; --green-m:#8cc8aa;
+  --red:#8a2820; --red-l:#fdf0ee; --red-m:#d4948c;
+  --amber:#8a5a10; --amber-l:#fdf4e0; --amber-m:#d4a84c;
+  --blue:#1e4a7a; --blue-l:#e8f0fa; --blue-m:#7aaad4;
+  --teal:#0f6a62; --teal-l:#e6f4f2; --teal-m:#7ac4bc;
+}
+body { font-family:'Segoe UI',system-ui,sans-serif; background:var(--bg); color:var(--ink); min-height:100vh; font-size:15px; line-height:1.6; }
+.topbar { background:var(--ink); padding:12px 22px; display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap; position:sticky; top:0; z-index:100; border-bottom:3px solid var(--teal); }
+.top-title { font-size:17px; font-weight:700; color:#fff; }
+.top-sub { font-size:11px; color:rgba(255,255,255,.45); font-weight:500; }
+.score-pill { background:rgba(255,255,255,.1); border:1.5px solid rgba(255,255,255,.2); border-radius:20px; padding:5px 14px; font-size:13px; font-weight:700; color:var(--teal-m); }
+.tab-row { display:flex; gap:4px; flex-wrap:wrap; padding:8px 22px 0; background:var(--ink); border-bottom:3px solid var(--teal); overflow-x:auto; }
+.ttab { background:transparent; border:1.5px solid rgba(255,255,255,.18); color:rgba(255,255,255,.55); font-size:12px; font-weight:600; padding:6px 12px; border-radius:6px 6px 0 0; cursor:pointer; transition:all .15s; white-space:nowrap; margin-bottom:-3px; border-bottom-color:transparent; flex-shrink:0; }
+.ttab:hover { color:#fff; border-color:rgba(255,255,255,.4); }
+.ttab.active { background:var(--paper); border-color:var(--teal); border-bottom-color:var(--paper); color:var(--teal); }
+.screen { display:none; }
+.screen.active { display:block; animation:up .25s ease; }
+@keyframes up { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
+.main { max-width:760px; margin:0 auto; padding:28px 20px 80px; }
+.page-hdr { margin-bottom:24px; padding-bottom:18px; border-bottom:1.5px solid var(--line); }
+.eyebrow { font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--teal); margin-bottom:6px; display:flex; align-items:center; gap:8px; }
+.eyebrow::after { content:''; flex:1; height:1px; background:var(--teal-m); opacity:.4; }
+.page-title { font-size:26px; font-weight:800; color:var(--ink); line-height:1.2; margin-bottom:7px; }
+.page-desc { font-size:14px; color:var(--muted); line-height:1.65; max-width:540px; }
+.prog-wrap { margin-bottom:20px; }
+.prog-track { height:6px; background:var(--line); border-radius:6px; overflow:hidden; margin-bottom:5px; }
+.prog-fill { height:100%; background:var(--teal); border-radius:6px; transition:width .5s ease; }
+.prog-label { font-size:11px; color:var(--muted); font-weight:600; }
+.chat-container { background:var(--paper); border:1.5px solid var(--line); border-radius:16px; overflow:hidden; margin-bottom:20px; box-shadow:0 2px 12px rgba(0,0,0,.07); }
+.chat-header { background:var(--teal); padding:12px 16px; }
+.chat-context { font-size:12px; font-weight:700; color:rgba(255,255,255,.85); font-style:italic; }
+.chat-context strong { color:#fff; font-style:normal; }
+.chat-body { padding:16px 14px; display:flex; flex-direction:column; gap:10px; }
+.msg-wrap { display:flex; flex-direction:column; gap:3px; }
+.msg-wrap.right { align-items:flex-end; }
+.msg-name { font-size:11px; font-weight:700; color:var(--muted); padding:0 4px; }
+.msg { max-width:78%; padding:10px 14px; border-radius:16px; font-size:14px; font-weight:500; line-height:1.55; border:2px solid transparent; }
+.msg.left { background:#f0ece4; border-bottom-left-radius:4px; color:var(--ink2); }
+.msg.right { background:#dcecea; border-bottom-right-radius:4px; color:var(--ink); }
+.msg-obs { font-size:11.5px; font-style:italic; color:var(--muted); padding:0 4px; max-width:78%; }
+.msg-wrap.right .msg-obs { text-align:right; }
+.ditado-hl { background:var(--amber-l); border-bottom:2px solid var(--amber-m); border-radius:3px; padding:0 3px; font-weight:700; }
+.analysis { background:var(--paper); border:1.5px solid var(--line); border-radius:14px; padding:18px 20px; margin-bottom:18px; }
+.analysis-title { font-size:14px; font-weight:800; color:var(--ink); margin-bottom:12px; }
+.pergunta-box { background:var(--blue-l); border:1.5px solid var(--blue-m); border-radius:12px; padding:12px 15px; margin-bottom:12px; font-size:13.5px; font-weight:700; color:var(--blue); line-height:1.55; }
+.opcoes { display:flex; flex-direction:column; gap:7px; margin-bottom:14px; }
+.opcao { background:#fff; border:1.5px solid var(--line); border-radius:10px; padding:10px 14px; cursor:pointer; font-size:13.5px; font-weight:600; color:var(--ink2); transition:all .15s; display:flex; align-items:flex-start; gap:10px; text-align:left; font-family:inherit; line-height:1.5; }
+.opcao:hover:not(:disabled) { border-color:var(--teal); background:var(--teal-l); color:var(--teal); }
+.opcao:disabled { cursor:default; }
+.opcao.correta { background:var(--green-l); border-color:var(--green); color:var(--green); }
+.opcao.errada { background:var(--red-l); border-color:var(--red); color:var(--red); }
+.opcao.revelada { background:var(--green-l); border-color:var(--green); color:var(--green); }
+.opc-ltr { width:24px; height:24px; border-radius:50%; background:var(--bg); border:1.5px solid var(--line); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; color:var(--muted); flex-shrink:0; }
+.fb-inline { border-radius:10px; padding:11px 14px; margin-bottom:12px; font-size:13px; font-weight:600; line-height:1.6; display:none; }
+.fb-inline.show { display:block; animation:up .2s ease; }
+.fb-c { background:var(--green-l); border:1.5px solid var(--green-m); color:#1e5a3a; }
+.fb-w { background:var(--red-l); border:1.5px solid var(--red-m); color:#5a1e1e; }
+.nota { width:100%; border:1.5px solid var(--line); border-radius:10px; padding:10px 13px; font-family:inherit; font-size:14px; color:var(--ink); background:var(--bg); resize:vertical; min-height:52px; outline:none; transition:border .15s; line-height:1.55; }
+.nota:focus { border-color:var(--teal); background:#fff; }
+.nota::placeholder { color:#bbb; font-style:italic; }
+.nota-label { font-size:11px; font-weight:700; letter-spacing:.07em; text-transform:uppercase; color:var(--muted); margin:10px 0 5px; }
+.btn { font-family:inherit; font-size:14px; font-weight:700; padding:10px 22px; border-radius:10px; border:2px solid; cursor:pointer; transition:all .15s; display:inline-flex; align-items:center; gap:7px; }
+.btn:hover { transform:translateY(-1px); }
+.btn-teal { background:var(--teal); border-color:var(--teal); color:#fff; }
+.btn-outline { background:transparent; border-color:var(--line); color:var(--muted); }
+.btn-outline:hover { border-color:var(--ink); color:var(--ink); }
+.btn-row { display:flex; gap:10px; flex-wrap:wrap; margin-top:14px; }
+.gabarito { background:var(--green-l); border:1.5px solid var(--green-m); border-radius:12px; padding:14px 16px; margin-top:12px; display:none; }
+.gabarito.show { display:block; animation:up .25s ease; }
+.gabarito-title { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.09em; color:var(--green); margin-bottom:8px; }
+.gabarito-body { font-size:13.5px; color:#1e5a3a; line-height:1.7; }
+.gabarito-body strong { color:var(--green); }
+.pistas-box { background:var(--amber-l); border:1.5px solid var(--amber-m); border-radius:12px; padding:12px 15px; margin-bottom:14px; }
+.pistas-title { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:var(--amber); margin-bottom:8px; }
+.pista-tag { display:inline-block; background:#fff; border:1.5px solid var(--amber-m); border-radius:20px; padding:4px 12px; font-size:12px; font-weight:600; color:var(--amber); margin:3px 3px 3px 0; cursor:pointer; transition:all .15s; }
+.pista-tag:hover { background:var(--amber-l); }
+.pista-tag.sel { background:var(--amber-m); color:#fff; }
+.inst-box { background:var(--teal-l); border:1.5px solid var(--teal-m); border-radius:12px; padding:13px 16px; margin-bottom:16px; font-size:13.5px; color:var(--teal); font-weight:600; line-height:1.6; }
+.result-box { background:var(--paper); border:1.5px solid var(--line); border-radius:16px; padding:28px 24px; text-align:center; margin-bottom:20px; }
+.result-title { font-size:28px; font-weight:800; color:var(--ink); margin-bottom:6px; }
+.result-sub { font-size:14px; color:var(--muted); margin-bottom:24px; line-height:1.6; }
+.result-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:20px; }
+@media(max-width:480px){ .result-grid{grid-template-columns:1fr} }
+.result-stat { background:var(--bg); border:1.5px solid var(--line); border-radius:12px; padding:14px; }
+.result-num { font-size:30px; font-weight:800; color:var(--teal); }
+.result-lbl { font-size:12px; color:var(--muted); font-weight:600; margin-top:2px; }
+.dizer-card { background:var(--amber-l); border:1.5px solid var(--amber-m); border-radius:10px; padding:12px 14px; margin-bottom:8px; }
+.dizer-nome { font-size:13px; font-weight:800; color:var(--amber); margin-bottom:3px; }
+.dizer-sig { font-size:13px; color:#5a3a08; }
+.timer { position:fixed; bottom:20px; right:20px; background:var(--ink); border:2px solid var(--teal); border-radius:12px; padding:10px 14px; text-align:center; min-width:80px; z-index:200; }
+.timer-val { font-size:20px; font-weight:800; color:#fff; letter-spacing:.05em; }
+.timer-lbl { font-size:9px; color:rgba(255,255,255,.4); text-transform:uppercase; letter-spacing:.07em; margin-bottom:4px; }
+.timer-btns { display:flex; gap:4px; margin-top:6px; }
+.tbtn { flex:1; padding:4px; border-radius:6px; border:none; font-size:10px; font-weight:700; cursor:pointer; }
+.tbtn-go { background:var(--teal); color:#fff; }
+.tbtn-rst { background:rgba(255,255,255,.1); color:rgba(255,255,255,.6); }
+
+/* DESENHO */
+.draw-toolbar { background:var(--paper); border:1.5px solid var(--line); border-radius:14px 14px 0 0; padding:12px 16px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.draw-label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.07em; color:var(--muted); margin-right:4px; }
+.color-btn { width:26px; height:26px; border-radius:50%; border:2.5px solid transparent; cursor:pointer; transition:transform .15s; flex-shrink:0; }
+.color-btn:hover { transform:scale(1.2); }
+.color-btn.active { border-color:var(--ink); transform:scale(1.15); }
+.size-btn { background:var(--bg); border:1.5px solid var(--line); border-radius:8px; padding:5px 10px; font-family:inherit; font-size:12px; font-weight:700; color:var(--ink2); cursor:pointer; transition:all .15s; }
+.size-btn:hover { border-color:var(--teal); color:var(--teal); }
+.size-btn.active { background:var(--teal); border-color:var(--teal); color:#fff; }
+.draw-action { background:var(--bg); border:1.5px solid var(--line); border-radius:8px; padding:6px 12px; font-family:inherit; font-size:12px; font-weight:700; color:var(--ink2); cursor:pointer; transition:all .15s; }
+.draw-action:hover { border-color:var(--ink); color:var(--ink); }
+.draw-action.eraser-on { background:var(--red-l); border-color:var(--red-m); color:var(--red); }
+.canvas-wrap { background:#fff; border:1.5px solid var(--line); border-top:none; border-radius:0 0 14px 14px; overflow:hidden; cursor:crosshair; }
+#drawCanvas { display:block; touch-action:none; }
+.frase-nav { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
+.frase-btn { background:var(--bg); border:1.5px solid var(--line); border-radius:8px; padding:6px 12px; font-family:inherit; font-size:12px; font-weight:700; color:var(--muted); cursor:pointer; transition:all .15s; }
+.frase-btn:hover { border-color:var(--amber-m); color:var(--amber); }
+.frase-btn.active { background:var(--amber); border-color:var(--amber); color:#fff; }
+.frase-atual { background:var(--amber-l); border:1.5px solid var(--amber-m); border-radius:12px; padding:12px 16px; margin-bottom:14px; font-size:14px; font-weight:700; color:var(--amber); line-height:1.55; }
+</style>
+</head>
+<body>
+
+<div class="timer">
+  <div class="timer-lbl">Sessão</div>
+  <div class="timer-val" id="timerVal">00:00</div>
+  <div class="timer-btns">
+    <button class="tbtn tbtn-go" id="timerBtn" onclick="toggleTimer()">Iniciar</button>
+    <button class="tbtn tbtn-rst" onclick="resetTimer()">Zerar</button>
+  </div>
+</div>
+
+<nav class="topbar">
+  <div>
+    <div class="top-title">Pistas e Ditados</div>
+    <div class="top-sub">Ditados populares nas conversas do dia a dia</div>
+  </div>
+  <div class="score-pill" id="scoreDisplay">0 pontos</div>
+</nav>
+<div class="tab-row">
+  <button class="ttab active" onclick="go('inicio')">Início</button>
+  <button class="ttab" onclick="go('c1')">História 1</button>
+  <button class="ttab" onclick="go('c2')">História 2</button>
+  <button class="ttab" onclick="go('c3')">História 3</button>
+  <button class="ttab" onclick="go('c4')">História 4</button>
+  <button class="ttab" onclick="go('c5')">História 5</button>
+  <button class="ttab" onclick="go('c6')">História 6</button>
+  <button class="ttab" onclick="go('c7')">História 7</button>
+  <button class="ttab" onclick="go('c8')">História 8</button>
+  <button class="ttab" onclick="go('resultado')">Resultado</button>
+  <button class="ttab" onclick="go('desenho')">Desenho</button>
+</div>
+
+<!-- INÍCIO -->
+<div class="screen active" id="s-inicio">
+  <div class="main">
+    <div class="page-hdr">
+      <div class="eyebrow">Bem-vinda</div>
+      <div class="page-title">Pistas e Ditados</div>
+      <div class="page-desc">Neste jogo, os ditados populares aparecem no meio de conversas reais. Sua missão é dupla: entender o que o ditado significa e descobrir o que a pessoa quis comunicar ao usá-lo naquele momento.</div>
+    </div>
+    <div class="inst-box">Um segredo importante: às vezes o ditado está certo para a situação, às vezes a pessoa usa o ditado na hora errada e acaba magoando alguém. Você vai precisar julgar as duas coisas!</div>
+    <div class="btn-row"><button class="btn btn-teal" onclick="go('c1')">Começar</button></div>
+  </div>
+</div>
+
+<!-- HISTÓRIA 1 -->
+<div class="screen" id="s-c1">
+  <div class="main">
+    <div class="page-hdr">
+      <div class="eyebrow">História 1 de 8</div>
+      <div class="page-title">O fone emprestado</div>
+    </div>
+    <div class="prog-wrap"><div class="prog-track"><div class="prog-fill" style="width:12%"></div></div><div class="prog-label">História 1 de 8</div></div>
+    <div class="chat-container">
+      <div class="chat-header"><div class="chat-context"><strong>Contexto:</strong> No ano passado, Gabi emprestou o fone antigo para uma colega e ele voltou quebrado. Agora outra amiga, Duda, pediu o fone novo emprestado e Gabi disse não. Duda reclamou com Lívia.</div></div>
+      <div class="chat-body">
+        <div class="msg-wrap right">
+          <div class="msg-name">Duda</div>
+          <div class="msg right">A Gabi não quis me emprestar o fone! Que egoísta, né?</div>
+        </div>
+        <div class="msg-wrap left">
+          <div class="msg-name">Lívia</div>
+          <div class="msg left">Calma, não é bem assim. <span class="ditado-hl">Gato escaldado tem medo de água fria.</span> Lembra que o fone antigo dela voltou quebrado quando ela emprestou?</div>
+        </div>
+        <div class="msg-wrap right">
+          <div class="msg-name">Duda</div>
+          <div class="msg right">Gato? Que gato? A gente tá falando de fone!</div>
+          <div class="msg-obs">Duda ficou ainda mais confusa</div>
+        </div>
+      </div>
+    </div>
+    <div class="analysis">
+      <div class="analysis-title">Análise</div>
+      <div class="pergunta-box">O que Lívia quis dizer com "gato escaldado tem medo de água fria"?</div>
+      <div class="opcoes" id="opcs1"></div>
+      <div class="fb-inline" id="fb1"></div>
+      <div class="pistas-box">
+        <div class="pistas-title">Quais pistas te ajudaram? Clique nelas</div>
+        <span class="pista-tag" onclick="this.classList.toggle('sel')">O fone antigo voltou quebrado</span>
+        <span class="pista-tag" onclick="this.classList.toggle('sel')">O "lembra que" depois do ditado</span>
+        <span class="pista-tag" onclick="this.classList.toggle('sel')">O "calma, não é bem assim"</span>
+      </div>
+      <div class="nota-label">A Gabi é egoísta mesmo? Explique com suas palavras</div>
+      <textarea class="nota" placeholder="Escreva aqui..."></textarea>
+      <div class="btn-row">
+        <button class="btn btn-outline" onclick="toggleGab(this)">Ver gabarito</button>
+        <button class="btn btn-teal" onclick="go('c2')">Próxima história</button>
+      </div>
+      <div class="gabarito">
+        <div class="gabarito-title">Gabarito</div>
+        <div class="gabarito-body">
+          <strong>O ditado:</strong> "gato escaldado tem medo de água fria" significa que quem já se machucou numa situação fica com medo até de coisas parecidas e inofensivas. Não tem nada a ver com gato de verdade.<br><br>
+          <strong>Na conversa:</strong> Lívia está defendendo Gabi. Ela não é egoísta: teve uma experiência ruim emprestando o fone antigo e por isso agora protege o novo. Entender a história de alguém muda o julgamento sobre o comportamento dela.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- HISTÓRIA 2 -->
+<div class="screen" id="s-c2">
+  <div class="main">
+    <div class="page-hdr">
+      <div class="eyebrow">História 2 de 8</div>
+      <div class="page-title">O silêncio no grupo</div>
+    </div>
+    <div class="prog-wrap"><div class="prog-track"><div class="prog-fill" style="width:25%"></div></div><div class="prog-label">História 2 de 8</div></div>
+    <div class="inst-box">Atenção: nesta história, o ditado pode estar sendo usado de forma errada!</div>
+    <div class="chat-container">
+      <div class="chat-header"><div class="chat-context"><strong>Contexto:</strong> O grupo de amigas decidiu mudar o local da festa de despedida do semestre. O lugar anterior tinha sido sugestão de Alana. Ninguém perguntou a opinião dela sobre a mudança.</div></div>
+      <div class="chat-body">
+        <div class="msg-wrap left">
+          <div class="msg-name">Bruna</div>
+          <div class="msg left">Então tá decidido, vai ser na pizzaria e não no parque! Todo mundo concorda?</div>
+        </div>
+        <div class="msg-wrap left">
+          <div class="msg-name">Carla</div>
+          <div class="msg left">Aprovado!</div>
+        </div>
+        <div class="msg-wrap right">
+          <div class="msg-name">Alana</div>
+          <div class="msg right"></div>
+          <div class="msg-obs">Alana visualizou e não respondeu nada</div>
+        </div>
+        <div class="msg-wrap left">
+          <div class="msg-name">Bruna</div>
+          <div class="msg left">A Alana viu e não falou nada. <span class="ditado-hl">Quem cala consente!</span> Fechado então, pizzaria!</div>
+        </div>
+      </div>
+    </div>
+    <div class="analysis">
+      <div class="analysis-title">Análise</div>
+      <div class="pergunta-box">Bruna usou o ditado "quem cala consente". O silêncio de Alana era mesmo concordância?</div>
+      <div class="opcoes" id="opcs2"></div>
+      <div class="fb-inline" id="fb2"></div>
+      <div class="pistas-box">
+        <div class="pistas-title">Quais pistas te ajudaram? Clique nelas</div>
+        <span class="pista-tag" onclick="this.classList.toggle('sel')">O parque era sugestão dela</span>
+        <span class="pista-tag" onclick="this.classList.toggle('sel')">Ninguém perguntou a opinião dela</span>
+        <span class="pista-tag" onclick="this.classList.toggle('sel')">Visualizou e não respondeu</span>
+      </div>
+      <div class="nota-label">O que Bruna poderia ter feito em vez de usar o ditado?</div>
+      <textarea class="nota" placeholder="Escreva aqui..."></textarea>
+      <div class="btn-row">
+        <button class="btn btn-outline" onclick="toggleGab(this)">Ver gabarito</button>
+        <button class="btn btn-teal" onclick="go('c3')">Próxima história</button>
+      </div>
+      <div class="gabarito">
+        <div class="gabarito-title">Gabarito</div>
+        <div class="gabarito-body">
+          <strong>O ditado:</strong> "quem cala consente" significa que quem não protesta estaria concordando. Mas cuidado: nem sempre isso é verdade!<br><br>
+          <strong>Na conversa:</strong> o silêncio de Alana provavelmente não era concordância, era mágoa. A ideia do parque era dela e foi trocada sem ninguém perguntar sua opinião. Às vezes o silêncio significa "estou chateada demais para responder". Bruna usou o ditado na hora errada. O melhor seria perguntar diretamente: "Alana, e você, o que acha? Sua opinião importa!"
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- HISTÓRIA 3 -->
+<div class="screen" id="s-c3">
+  <div class="main">
+    <div class="page-hdr">
+      <div class="eyebrow">História 3 de 8</div>
+      <div class="page-title">A menina nova</div>
+    </div>
+    <div class="prog-wrap"><div class="prog-track"><div class="prog-fill" style="width:37%"></div></div><div class="prog-label">História 3 de 8</div></div>
+    <div class="chat-container">
+      <div class="chat-header"><div class="chat-context"><strong>Contexto:</strong> Uma menina nova chegou na turma há duas semanas. Ela fica quieta no canto e quase não fala com ninguém. Duas colegas conversam sobre ela.</div></div>
+      <div class="chat-body">
+        <div class="msg-wrap right">
+          <div class="msg-name">Sofia</div>
+          <div class="msg right">Essa menina nova é muito metida. Não fala com ninguém, deve se achar melhor que a gente.</div>
+        </div>
+        <div class="msg-wrap left">
+          <div class="msg-name">Helô</div>
+          <div class="msg left">Será? <span class="ditado-hl">As aparências enganam.</span> Ontem eu vi ela sozinha no recreio olhando pra gente tipo querendo se aproximar.</div>
+        </div>
+        <div class="msg-wrap left">
+          <div class="msg-name">Helô</div>
+          <div class="msg left">Fui falar com ela e adivinha: ela é super gente boa, só é tímida demais! Ficou vermelha e feliz quando eu puxei assunto.</div>
+        </div>
+      </div>
+    </div>
+    <div class="analysis">
+      <div class="analysis-title">Análise</div>
+      <div class="pergunta-box">O que "as aparências enganam" quis dizer nesta situação?</div>
+      <div class="opcoes" id="opcs3"></div>
+      <div class="fb-inline" id="fb3"></div>
+      <div class="pistas-box">
+        <div class="pistas-title">Quais pistas mostravam que era timidez e não arrogância? Clique nelas</div>
+        <span class="pista-tag" onclick="this.classList.toggle('sel')">Olhava para o grupo como quem quer se aproximar</span>
+        <span class="pista-tag" onclick="this.classList.toggle('sel')">Ficou feliz quando puxaram assunto</span>
+        <span class="pista-tag" onclick="this.classList.toggle('sel')">Chegou há pouco tempo na escola</span>
+      </div>
+      <div class="nota-label">Você já julgou alguém errado pela primeira impressão? Conte</div>
+      <textarea class="nota" placeholder="Escreva aqui..."></textarea>
+      <div class="btn-row">
+        <button class="btn btn-outline" onclick="toggleGab(this)">Ver gabarito</button>
+        <button class="btn btn-teal" onclick="go('c4')">Próxima história</button>
+      </div>
+      <div class="gabarito">
+        <div class="gabarito-title">Gabarito</div>
+        <div class="gabarito-body">
+          <strong>O ditado:</strong> "as aparências enganam" significa que o jeito que alguém parece por fora nem sempre mostra quem a pessoa é de verdade.<br><br>
+          <strong>Na conversa:</strong> o mesmo comportamento (ficar quieta) pode ter explicações opostas: arrogância ou timidez. Sofia leu como arrogância. Helô investigou e descobriu timidez. A lição: antes de julgar o comportamento de alguém, vale se perguntar se existe outra explicação possível.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- HISTÓRIA 4 -->
+<div class="screen" id="s-c4">
+  <div class="main">
+    <div class="page-hdr">
+      <div class="eyebrow">História 4 de 8</div>
+      <div class="page-title">O trabalho perdido</div>
+    </div>
+    <div class="prog-wrap"><div class="prog-track"><div class="prog-fill" style="width:50%"></div></div><div class="prog-label">História 4 de 8</div></div>
+    <div class="inst-box">Atenção: aqui o ditado é verdadeiro, mas será que foi usado na hora certa?</div>
+    <div class="chat-container">
+      <div class="chat-header"><div class="chat-context"><strong>Contexto:</strong> Yasmin passou a semana toda fazendo um trabalho no computador. Hoje o computador travou e ela perdeu tudo, não tinha salvado. Ela mandou mensagem chorando para a amiga.</div></div>
+      <div class="chat-body">
+        <div class="msg-wrap right">
+          <div class="msg-name">Yasmin</div>
+          <div class="msg right">Perdi o trabalho INTEIRO! Uma semana de esforço! Tô chorando aqui, não acredito!</div>
+        </div>
+        <div class="msg-wrap left">
+          <div class="msg-name">Paty</div>
+          <div class="msg left">Ah amiga, <span class="ditado-hl">não adianta chorar sobre o leite derramado.</span> Refaz e pronto, agora salva direto!</div>
+          <div class="msg-obs">Respondeu em segundos</div>
+        </div>
+        <div class="msg-wrap right">
+          <div class="msg-name">Yasmin</div>
+          <div class="msg right">Tá. Valeu.</div>
+          <div class="msg-obs">Yasmin parou de responder depois disso</div>
+        </div>
+      </div>
+    </div>
+    <div class="analysis">
+      <div class="analysis-title">Análise</div>
+      <div class="pergunta-box">O ditado de Paty é verdadeiro, mas Yasmin ficou magoada. Por quê?</div>
+      <div class="opcoes" id="opcs4"></div>
+      <div class="fb-inline" id="fb4"></div>
+      <div class="pistas-box">
+        <div class="pistas-title">Quais pistas mostram que Yasmin ficou magoada? Clique nelas</div>
+        <span class="pista-tag" onclick="this.classList.toggle('sel')">O "Tá. Valeu." curto e seco</span>
+        <span class="pista-tag" onclick="this.classList.toggle('sel')">Parou de responder</span>
+        <span class="pista-tag" onclick="this.classList.toggle('sel')">Ela estava chorando e pediu apoio</span>
+      </div>
+      <div class="nota-label">O que Paty poderia ter dito primeiro, antes de qualquer conselho?</div>
+      <textarea class="nota" placeholder="Escreva aqui..."></textarea>
+      <div class="btn-row">
+        <button class="btn btn-outline" onclick="toggleGab(this)">Ver gabarito</button>
+        <button class="btn btn-teal" onclick="go('c5')">Próxima história</button>
+      </div>
+      <div class="gabarito">
+        <div class="gabarito-title">Gabarito</div>
+        <div class="gabarito-body">
+          <strong>O ditado:</strong> "não adianta chorar sobre o leite derramado" significa que não vale a pena sofrer pelo que já aconteceu e não tem volta. É um ditado verdadeiro e sábio.<br><br>
+          <strong>O problema foi a hora:</strong> Yasmin estava chorando naquele momento. Quando alguém está triste, a primeira coisa que ela precisa é ser acolhida, não receber um conselho lógico. O ditado certo na hora errada machuca. Paty poderia ter dito primeiro: "Amiga, que raiva, uma semana de trabalho! Você tem todo o direito de chorar. Quer desabafar?" E só depois, em outro momento, falar de refazer.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- HISTÓRIA 5 -->
+<div class="screen" id="s-c5">
+  <div class="main">
+    <div class="page-hdr">
+      <div class="eyebrow">História 5 de 8</div>
+      <div class="page-title">A natação</div>
+    </div>
+    <div class="prog-wrap"><div class="prog-track"><div class="prog-fill" style="width:62%"></div></div><div class="prog-label">História 5 de 8</div></div>
+    <div class="chat-container">
+      <div class="chat-header"><div class="chat-context"><strong>Contexto:</strong> Cecília começou natação junto com duas amigas. As amigas já passaram para a turma avançada e ela continua na intermediária. Ela desabafou com a avó.</div></div>
+      <div class="chat-body">
+        <div class="msg-wrap right">
+          <div class="msg-name">Cecília</div>
+          <div class="msg right">Vó, todo mundo avança menos eu. Tô pensando em desistir da natação.</div>
+        </div>
+        <div class="msg-wrap left">
+          <div class="msg-name">Avó</div>
+          <div class="msg left">Minha filha, cada pessoa tem seu tempo. <span class="ditado-hl">Devagar se vai ao longe.</span></div>
+        </div>
+        <div class="msg-wrap left">
+          <div class="msg-name">Avó</div>
+          <div class="msg left">Sabe quem me ensinou a nadar? Seu bisavô. Ele levou três anos para aprender e depois atravessou o rio da cidade inteirinho, coisa que ninguém da época dele fazia.</div>
+        </div>
+        <div class="msg-wrap right">
+          <div class="msg-name">Cecília</div>
+          <div class="msg right">Sério, vó?? Três anos?</div>
+          <div class="msg-obs">Cecília não falou mais em desistir</div>
+        </div>
+      </div>
+    </div>
+    <div class="analysis">
+      <div class="analysis-title">Análise</div>
+      <div class="pergunta-box">O que a avó quis comunicar com "devagar se vai ao longe"?</div>
+      <div class="opcoes" id="opcs5"></div>
+      <div class="fb-inline" id="fb5"></div>
+      <div class="nota-label">Por que a história do bisavô ajudou mais do que só o ditado sozinho?</div>
+      <textarea class="nota" placeholder="Escreva aqui..."></textarea>
+      <div class="btn-row">
+        <button class="btn btn-outline" onclick="toggleGab(this)">Ver gabarito</button>
+        <button class="btn btn-teal" onclick="go('c6')">Próxima história</button>
+      </div>
+      <div class="gabarito">
+        <div class="gabarito-title">Gabarito</div>
+        <div class="gabarito-body">
+          <strong>O ditado:</strong> "devagar se vai ao longe" significa que quem avança com calma e constância chega mais longe do que quem tem pressa. Progresso lento também é progresso.<br><br>
+          <strong>Na conversa:</strong> a avó usou o ditado na hora certa e do jeito certo: junto com uma história real que provava o que o ditado diz. Diferente da história anterior, aqui o conselho funcionou porque veio com carinho, com exemplo concreto e sem diminuir o sentimento de Cecília.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- HISTÓRIA 6 -->
+<div class="screen" id="s-c6">
+  <div class="main">
+    <div class="page-hdr">
+      <div class="eyebrow">História 6 de 8</div>
+      <div class="page-title">Falar ou não falar?</div>
+    </div>
+    <div class="prog-wrap"><div class="prog-track"><div class="prog-fill" style="width:75%"></div></div><div class="prog-label">História 6 de 8</div></div>
+    <div class="inst-box">Atenção: mais um caso de ditado que pode não servir para a situação!</div>
+    <div class="chat-container">
+      <div class="chat-header"><div class="chat-context"><strong>Contexto:</strong> Miguel percebeu que uma colega da turma, a Rita, está sendo deixada de fora dos trabalhos em grupo de propósito por alguns colegas. Ele comentou com o irmão mais velho.</div></div>
+      <div class="chat-body">
+        <div class="msg-wrap right">
+          <div class="msg-name">Miguel</div>
+          <div class="msg right">Tão deixando a Rita de fora dos grupos de propósito. Eu vejo isso acontecendo, mas não sei se falo alguma coisa.</div>
+        </div>
+        <div class="msg-wrap left">
+          <div class="msg-name">Irmão</div>
+          <div class="msg left">Hmm, <span class="ditado-hl">em boca fechada não entra mosca.</span> Melhor não se meter, cara.</div>
+        </div>
+        <div class="msg-wrap right">
+          <div class="msg-name">Miguel</div>
+          <div class="msg right">Mas ela fica sozinha toda vez... isso não me parece certo.</div>
+        </div>
+      </div>
+    </div>
+    <div class="analysis">
+      <div class="analysis-title">Análise</div>
+      <div class="pergunta-box">O irmão usou "em boca fechada não entra mosca". Esse conselho é bom para esta situação?</div>
+      <div class="opcoes" id="opcs6"></div>
+      <div class="fb-inline" id="fb6"></div>
+      <div class="nota-label">O que Miguel poderia fazer para ajudar a Rita?</div>
+      <textarea class="nota" placeholder="Escreva aqui..."></textarea>
+      <div class="btn-row">
+        <button class="btn btn-outline" onclick="toggleGab(this)">Ver gabarito</button>
+        <button class="btn btn-teal" onclick="go('c7')">Próxima história</button>
+      </div>
+      <div class="gabarito">
+        <div class="gabarito-title">Gabarito</div>
+        <div class="gabarito-body">
+          <strong>O ditado:</strong> "em boca fechada não entra mosca" significa que ficar quieto às vezes evita problemas. Serve para situações como não dar opinião sobre assunto que não nos diz respeito.<br><br>
+          <strong>O problema:</strong> aqui o ditado não serve! Quando alguém está sendo excluída de propósito, ficar quieto não é sabedoria, é omissão. O próprio Miguel sentiu isso: "não me parece certo". A intuição dele estava mais certa que o ditado. Ele poderia chamar a Rita para o grupo dele, conversar com a professora ou falar com os colegas. Ditados são conselhos gerais, mas cada situação precisa ser pensada!
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- HISTÓRIA 7 -->
+<div class="screen" id="s-c7">
+  <div class="main">
+    <div class="page-hdr">
+      <div class="eyebrow">História 7 de 8</div>
+      <div class="page-title">A desculpa descoberta</div>
+    </div>
+    <div class="prog-wrap"><div class="prog-track"><div class="prog-fill" style="width:87%"></div></div><div class="prog-label">História 7 de 8</div></div>
+    <div class="chat-container">
+      <div class="chat-header"><div class="chat-context"><strong>Contexto:</strong> Nina disse para Bela que não podia ir ao cinema porque estava doente. Naquela mesma noite, Nina apareceu nos stories numa lanchonete com outras meninas.</div></div>
+      <div class="chat-body">
+        <div class="msg-wrap right">
+          <div class="msg-name">Bela</div>
+          <div class="msg right">Melhorou rápido, né? Vi seus stories na lanchonete.</div>
+        </div>
+        <div class="msg-wrap left">
+          <div class="msg-name">Nina</div>
+          <div class="msg left">Ah... é que eu melhorei de repente e as meninas me chamaram do nada...</div>
+        </div>
+        <div class="msg-wrap right">
+          <div class="msg-name">Bela</div>
+          <div class="msg right">Sei. <span class="ditado-hl">Mentira tem perna curta,</span> Nina. Se você não queria ir ao cinema comigo, era só falar. Eu ia entender.</div>
+        </div>
+        <div class="msg-wrap left">
+          <div class="msg-name">Nina</div>
+          <div class="msg left">Desculpa... eu não soube como te dizer não.</div>
+        </div>
+      </div>
+    </div>
+    <div class="analysis">
+      <div class="analysis-title">Análise</div>
+      <div class="pergunta-box">O que "mentira tem perna curta" significa nesta conversa?</div>
+      <div class="opcoes" id="opcs7"></div>
+      <div class="fb-inline" id="fb7"></div>
+      <div class="pistas-box">
+        <div class="pistas-title">O que magoou mais a Bela? Clique na resposta que você acha</div>
+        <span class="pista-tag" onclick="this.classList.toggle('sel')">Nina não ter ido ao cinema</span>
+        <span class="pista-tag" onclick="this.classList.toggle('sel')">Nina ter mentido em vez de falar a verdade</span>
+        <span class="pista-tag" onclick="this.classList.toggle('sel')">As outras meninas</span>
+      </div>
+      <div class="nota-label">Como Nina poderia ter recusado o convite com honestidade?</div>
+      <textarea class="nota" placeholder="Escreva aqui..."></textarea>
+      <div class="btn-row">
+        <button class="btn btn-outline" onclick="toggleGab(this)">Ver gabarito</button>
+        <button class="btn btn-teal" onclick="go('c8')">Próxima história</button>
+      </div>
+      <div class="gabarito">
+        <div class="gabarito-title">Gabarito</div>
+        <div class="gabarito-body">
+          <strong>O ditado:</strong> "mentira tem perna curta" significa que mentiras são descobertas rápido, elas não vão longe.<br><br>
+          <strong>Na conversa:</strong> Bela está dizendo que a mentira foi descoberta e que o que magoou não foi a recusa, foi a desonestidade. Repare na frase mais importante: "era só falar, eu ia entender". Recusar um convite com sinceridade quase nunca machuca tanto quanto mentir. Nina poderia ter dito: "Bela, hoje não estou a fim de cinema, podemos ir outro dia?"
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- HISTÓRIA 8 -->
+<div class="screen" id="s-c8">
+  <div class="main">
+    <div class="page-hdr">
+      <div class="eyebrow">História 8 de 8</div>
+      <div class="page-title">O trabalho de uma só</div>
+    </div>
+    <div class="prog-wrap"><div class="prog-track"><div class="prog-fill" style="width:100%"></div></div><div class="prog-label">Última história!</div></div>
+    <div class="chat-container">
+      <div class="chat-header"><div class="chat-context"><strong>Contexto:</strong> No trabalho em grupo, Maitê ficou fazendo tudo sozinha enquanto os outros três colegas não entregaram suas partes. Faltam dois dias para a entrega.</div></div>
+      <div class="chat-body">
+        <div class="msg-wrap left">
+          <div class="msg-name">Teo</div>
+          <div class="msg left">Maitê, como tá o trabalho? Já tá quase pronto né?</div>
+        </div>
+        <div class="msg-wrap right">
+          <div class="msg-name">Maitê</div>
+          <div class="msg right">A MINHA parte tá pronta. As de vocês três, ninguém entregou nada.</div>
+        </div>
+        <div class="msg-wrap left">
+          <div class="msg-name">Teo</div>
+          <div class="msg left">Relaxa, você faz tão bem! Termina aí que a gente coloca o nome!</div>
+        </div>
+        <div class="msg-wrap right">
+          <div class="msg-name">Maitê</div>
+          <div class="msg right">Não. <span class="ditado-hl">Uma andorinha só não faz verão.</span> Trabalho de grupo é de grupo. Cada um entrega sua parte até amanhã ou eu falo com a professora.</div>
+          <div class="msg-obs">Firme, mas sem xingar ninguém</div>
+        </div>
+      </div>
+    </div>
+    <div class="analysis">
+      <div class="analysis-title">Análise</div>
+      <div class="pergunta-box">O que Maitê quis dizer com "uma andorinha só não faz verão"?</div>
+      <div class="opcoes" id="opcs8"></div>
+      <div class="fb-inline" id="fb8"></div>
+      <div class="pergunta-box" style="margin-top:14px">Maitê foi grossa ou foi assertiva? Qual a diferença?</div>
+      <textarea class="nota" placeholder="Escreva aqui o que você acha..."></textarea>
+      <div class="btn-row">
+        <button class="btn btn-outline" onclick="toggleGab(this)">Ver gabarito</button>
+        <button class="btn btn-teal" onclick="go('resultado')">Ver resultado</button>
+      </div>
+      <div class="gabarito">
+        <div class="gabarito-title">Gabarito</div>
+        <div class="gabarito-body">
+          <strong>O ditado:</strong> "uma andorinha só não faz verão" significa que uma pessoa sozinha não consegue fazer o que precisa de um grupo inteiro.<br><br>
+          <strong>Na conversa:</strong> Maitê usou o ditado perfeitamente: um trabalho de grupo não pode ser feito por uma pessoa só. E repare como ela foi assertiva sem ser grossa: não xingou, não atacou ninguém, apenas disse o que precisava acontecer e qual seria a consequência. Ser assertiva é defender o que é justo com firmeza e respeito ao mesmo tempo. Isso é diferente de ser grossa (atacar) e diferente de aceitar tudo calada.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- RESULTADO -->
+<div class="screen" id="s-resultado">
+  <div class="main">
+    <div class="page-hdr">
+      <div class="eyebrow">Resultado final</div>
+      <div class="page-title">Você terminou!</div>
+    </div>
+    <div class="result-box">
+      <div class="result-title">Mestre dos ditados!</div>
+      <div class="result-sub">Você aprendeu 8 ditados novos e descobriu algo que pouca gente sabe: ditado bom na hora errada também machuca. Saber QUANDO usar é tão importante quanto saber O QUE significa.</div>
+      <div class="result-grid">
+        <div class="result-stat"><div class="result-num">8</div><div class="result-lbl">Histórias analisadas</div></div>
+        <div class="result-stat"><div class="result-num" id="pontosFinais">0</div><div class="result-lbl">Pontos conquistados</div></div>
+      </div>
+    </div>
+    <div style="background:var(--paper);border:1.5px solid var(--line);border-radius:14px;padding:18px 20px;margin-bottom:20px">
+      <div style="font-size:14px;font-weight:800;color:var(--ink);margin-bottom:12px">Os ditados que você aprendeu hoje</div>
+      <div class="dizer-card"><div class="dizer-nome">Gato escaldado tem medo de água fria</div><div class="dizer-sig">Quem já se machucou fica com medo até de coisas parecidas e inofensivas.</div></div>
+      <div class="dizer-card"><div class="dizer-nome">Quem cala consente</div><div class="dizer-sig">Quem não protesta estaria concordando. Cuidado: nem sempre é verdade, o silêncio pode ser mágoa!</div></div>
+      <div class="dizer-card"><div class="dizer-nome">As aparências enganam</div><div class="dizer-sig">O jeito que alguém parece por fora nem sempre mostra quem a pessoa é de verdade.</div></div>
+      <div class="dizer-card"><div class="dizer-nome">Não adianta chorar sobre o leite derramado</div><div class="dizer-sig">Não vale sofrer pelo que já passou e não tem volta. Mas atenção: na hora errada, esse conselho machuca!</div></div>
+      <div class="dizer-card"><div class="dizer-nome">Devagar se vai ao longe</div><div class="dizer-sig">Quem avança com calma e constância chega mais longe do que quem tem pressa.</div></div>
+      <div class="dizer-card"><div class="dizer-nome">Em boca fechada não entra mosca</div><div class="dizer-sig">Ficar quieto às vezes evita problemas. Mas quando alguém precisa de ajuda, falar é o certo!</div></div>
+      <div class="dizer-card"><div class="dizer-nome">Mentira tem perna curta</div><div class="dizer-sig">Mentiras são descobertas rápido, elas não vão longe.</div></div>
+      <div class="dizer-card"><div class="dizer-nome">Uma andorinha só não faz verão</div><div class="dizer-sig">Uma pessoa sozinha não consegue fazer o que precisa de um grupo inteiro.</div></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-teal" onclick="go('inicio')">Jogar novamente</button>
+    </div>
+  </div>
+</div>
+
+<!-- DESENHO -->
+<div class="screen" id="s-desenho">
+  <div class="main">
+    <div class="page-hdr">
+      <div class="eyebrow">Área de desenho</div>
+      <div class="page-title">Desenhe o ditado</div>
+      <div class="page-desc">Escolha um ditado e desenhe as duas versões dele: o sentido ao pé da letra (o desenho engraçado) e o sentido de verdade (o que ele realmente significa).</div>
+    </div>
+    <div class="frase-nav" id="fraseNav"></div>
+    <div class="frase-atual" id="fraseAtual">Escolha um ditado acima ou desenhe livre!</div>
+    <div class="draw-toolbar">
+      <span class="draw-label">Cor</span>
+      <button class="color-btn active" style="background:#1e1a14" onclick="setColor('#1e1a14',this)"></button>
+      <button class="color-btn" style="background:#c0392b" onclick="setColor('#c0392b',this)"></button>
+      <button class="color-btn" style="background:#2e7d5e" onclick="setColor('#2e7d5e',this)"></button>
+      <button class="color-btn" style="background:#1e4a7a" onclick="setColor('#1e4a7a',this)"></button>
+      <button class="color-btn" style="background:#e6b800" onclick="setColor('#e6b800',this)"></button>
+      <button class="color-btn" style="background:#7d3c98" onclick="setColor('#7d3c98',this)"></button>
+      <button class="color-btn" style="background:#e67e22" onclick="setColor('#e67e22',this)"></button>
+      <button class="color-btn" style="background:#e91e8c" onclick="setColor('#e91e8c',this)"></button>
+      <span class="draw-label" style="margin-left:8px">Tamanho</span>
+      <button class="size-btn" onclick="setSize(3,this)">P</button>
+      <button class="size-btn active" onclick="setSize(6,this)">M</button>
+      <button class="size-btn" onclick="setSize(12,this)">G</button>
+      <button class="draw-action" id="eraserBtn" onclick="toggleEraser()" style="margin-left:8px">Borracha</button>
+      <button class="draw-action" onclick="clearCanvas()">Limpar tudo</button>
+    </div>
+    <div class="canvas-wrap"><canvas id="drawCanvas" height="420"></canvas></div>
+    <div class="nota-label" style="margin-top:14px">O que você desenhou? Explique as duas versões</div>
+    <textarea class="nota" placeholder="Escreva aqui o que cada parte do desenho representa..."></textarea>
+  </div>
+</div>
+
+<script>
+const TABS=['inicio','c1','c2','c3','c4','c5','c6','c7','c8','resultado','desenho'];
+function go(id){
+  TABS.forEach(t=>document.getElementById('s-'+t).classList.remove('active'));
+  document.getElementById('s-'+id).classList.add('active');
+  document.querySelectorAll('.ttab').forEach((b,i)=>b.classList.toggle('active',TABS[i]===id));
+  window.scrollTo({top:0,behavior:'smooth'});
+  if(id==='resultado') document.getElementById('pontosFinais').textContent=score;
+}
+let score=0;
+function addScore(n){ score+=n; document.getElementById('scoreDisplay').textContent=score+' pontos'; }
+
+const QUIZ={
+  1:{ops:["Que a Gabi tem um gato que se machucou","Que a Gabi ficou com medo de emprestar porque já teve uma experiência ruim","Que o fone da Gabi caiu na água"],c:1,
+     fbc:"O ditado explica o comportamento de Gabi: quem já se machucou (fone quebrado) fica com receio de situações parecidas. Ela não é egoísta, é precavida.",
+     fbw:"Não tem gato nem água de verdade! O ditado fala de experiências: quem já se machucou uma vez fica com medo de repetir. O fone antigo de Gabi voltou quebrado."},
+  2:{ops:["Sim, quem não fala está concordando, o ditado está certo","Não, o silêncio dela provavelmente era mágoa, o ditado foi usado na hora errada","Sim, ela devia ter falado se não concordasse"],c:1,
+     fbc:"O contexto muda tudo: a ideia do parque era dela e foi descartada sem ninguém perguntar. O silêncio ali era mágoa, não concordância. O ditado nem sempre se aplica!",
+     fbw:"Olhe o contexto: o parque era sugestão da Alana e trocaram sem perguntar a opinião dela. O silêncio dela provavelmente era mágoa. Ditados são conselhos gerais, não valem para toda situação."},
+  3:{ops:["Que a menina nova estava fingindo ser tímida","Que o comportamento quieto dela parecia arrogância mas era timidez","Que ela é bonita por fora e má por dentro"],c:1,
+     fbc:"O mesmo comportamento pode ter explicações opostas. Ficar quieta parecia arrogância, mas era timidez. Helô investigou antes de julgar, e descobriu a verdade.",
+     fbw:"O ditado fala de julgamento: o comportamento quieto PARECIA arrogância, mas ERA timidez. A aparência (metida) enganava. Helô descobriu porque foi conversar antes de julgar."},
+  4:{ops:["Porque o ditado estava errado","Porque ela queria acolhimento primeiro, e recebeu um conselho lógico na hora do choro","Porque Paty demorou para responder"],c:1,
+     fbc:"O ditado é verdadeiro, mas a hora era errada. Quem está chorando precisa primeiro de acolhimento. Conselho lógico em momento de dor soa como frieza.",
+     fbw:"O ditado não estava errado, e Paty respondeu rápido. O problema foi outro: Yasmin estava chorando e precisava de acolhimento primeiro. Conselho na hora do choro soa como frieza."},
+  5:{ops:["Que Cecília deveria nadar mais devagar na piscina","Que progresso lento também é progresso, cada um tem seu tempo","Que ela deveria desistir e tentar outro esporte"],c:1,
+     fbc:"A avó validou o tempo de Cecília: avançar devagar não é fracassar. E a história do bisavô provou o ditado com um exemplo real da própria família.",
+     fbw:"Não é sobre velocidade na água! O ditado fala do tempo de cada pessoa: progresso lento também leva longe. O bisavô demorou três anos e depois atravessou o rio inteiro."},
+  6:{ops:["Sim, é melhor Miguel não se meter em confusão","Não, quando alguém está sendo excluída, ficar quieto é omissão e não sabedoria","Sim, porque mosca entra mesmo em boca aberta"],c:1,
+     fbc:"O ditado serve para outras situações, mas não para esta. Quando alguém precisa de ajuda, o silêncio deixa de ser sabedoria e vira omissão. A intuição de Miguel estava certa.",
+     fbw:"Cuidado: o ditado serve para situações como não opinar sobre o que não nos diz respeito. Mas exclusão de propósito machuca alguém. Aí, ficar quieto é omissão. A intuição de Miguel ('não me parece certo') estava mais certa que o ditado."},
+  7:{ops:["Que Nina tem pernas curtas e por isso não foi ao cinema","Que a mentira foi descoberta rapidamente, como sempre acontece","Que Bela nunca mais vai falar com Nina"],c:1,
+     fbc:"Mentiras não vão longe: os stories entregaram tudo em poucas horas. E repare na parte mais importante: o que magoou Bela foi a mentira, não a recusa.",
+     fbw:"Não é sobre pernas de verdade! O ditado diz que mentiras são descobertas rápido. Os stories entregaram a mentira em poucas horas. E o que magoou Bela foi a desonestidade, não a recusa."},
+  8:{ops:["Que ela queria que os colegas trouxessem andorinhas","Que uma pessoa sozinha não pode fazer o trabalho que é de um grupo inteiro","Que o verão está chegando e o trabalho precisa terminar antes"],c:1,
+     fbc:"Maitê usou o ditado com precisão: trabalho de grupo precisa do grupo. E ela foi assertiva, não grossa: firme e respeitosa ao mesmo tempo.",
+     fbw:"Nada de andorinhas ou estações do ano! O ditado diz que uma pessoa só não dá conta do que é tarefa de um grupo. Maitê estava dizendo: eu não vou fazer o trabalho de quatro sozinha."},
+};
+
+function buildQuizzes(){
+  Object.keys(QUIZ).forEach(k=>{
+    const q=QUIZ[k];
+    const container=document.getElementById('opcs'+k);
+    if(!container)return;
+    const shuffled=q.ops.map((o,j)=>({text:o,orig:j})).sort(()=>Math.random()-.5);
+    const newC=shuffled.findIndex(o=>o.orig===q.c);
+    container.innerHTML=shuffled.map((o,j)=>
+      `<button class="opcao" onclick="answerQ(${k},${j},${newC})"><span class="opc-ltr">${['A','B','C'][j]}</span>${o.text}</button>`
+    ).join('');
+  });
+}
+function answerQ(k,chosen,correct){
+  const q=QUIZ[k];
+  const btns=document.querySelectorAll('#opcs'+k+' .opcao');
+  btns.forEach(b=>b.disabled=true);
+  const fb=document.getElementById('fb'+k);
+  if(chosen===correct){
+    btns[chosen].classList.add('correta');
+    fb.className='fb-inline show fb-c';
+    fb.textContent='Isso mesmo! '+q.fbc;
+    addScore(10);
+  } else {
+    btns[chosen].classList.add('errada');
+    btns[correct].classList.add('revelada');
+    fb.className='fb-inline show fb-w';
+    fb.textContent='Quase! '+q.fbw;
+  }
+}
+function toggleGab(btn){
+  const gab=btn.parentElement.nextElementSibling;
+  const show=gab.classList.contains('show');
+  gab.classList.toggle('show');
+  btn.textContent=show?'Ver gabarito':'Fechar gabarito';
+}
+let secs=0,running=false,interval=null;
+function pad(n){return String(n).padStart(2,'0')}
+function updateT(){document.getElementById('timerVal').textContent=pad(Math.floor(secs/60))+':'+pad(secs%60)}
+function toggleTimer(){
+  const b=document.getElementById('timerBtn');
+  if(running){clearInterval(interval);running=false;b.textContent='Iniciar';}
+  else{running=true;b.textContent='Pausar';interval=setInterval(()=>{secs++;updateT();},1000);}
+}
+function resetTimer(){clearInterval(interval);running=false;secs=0;updateT();document.getElementById('timerBtn').textContent='Iniciar';}
+
+// DESENHO
+const DITADOS=[
+  "Gato escaldado tem medo de água fria",
+  "Quem cala consente",
+  "As aparências enganam",
+  "Não adianta chorar sobre o leite derramado",
+  "Devagar se vai ao longe",
+  "Em boca fechada não entra mosca",
+  "Mentira tem perna curta",
+  "Uma andorinha só não faz verão"
+];
+let drawColor='#1e1a14', drawSize=6, erasing=false, drawing=false, canvasReady=false;
+const canvas=document.getElementById('drawCanvas');
+const ctx=canvas.getContext('2d');
+
+function buildFraseNav(){
+  const nav=document.getElementById('fraseNav');
+  nav.innerHTML=DITADOS.map((d,i)=>`<button class="frase-btn" onclick="setFrase(${i},this)">Ditado ${i+1}</button>`).join('')+`<button class="frase-btn" onclick="setFrase(-1,this)">Livre</button>`;
+}
+function setFrase(i,btn){
+  document.querySelectorAll('.frase-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('fraseAtual').textContent = i===-1 ? 'Desenho livre! Solte a imaginação.' : DITADOS[i];
+}
+function initCanvas(){
+  if(canvasReady)return;
+  const wrap=canvas.parentElement;
+  canvas.width=wrap.clientWidth;
+  ctx.fillStyle='#ffffff';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.lineCap='round'; ctx.lineJoin='round';
+  canvasReady=true;
+}
+function pos(e){
+  const r=canvas.getBoundingClientRect();
+  const t=e.touches?e.touches[0]:e;
+  return {x:t.clientX-r.left, y:t.clientY-r.top};
+}
+function startDraw(e){ e.preventDefault(); drawing=true; const p=pos(e); ctx.beginPath(); ctx.moveTo(p.x,p.y); }
+function moveDraw(e){
+  if(!drawing)return; e.preventDefault();
+  const p=pos(e);
+  ctx.strokeStyle=erasing?'#ffffff':drawColor;
+  ctx.lineWidth=erasing?drawSize*3:drawSize;
+  ctx.lineTo(p.x,p.y); ctx.stroke();
+}
+function endDraw(){ drawing=false; }
+canvas.addEventListener('mousedown',startDraw);
+canvas.addEventListener('mousemove',moveDraw);
+window.addEventListener('mouseup',endDraw);
+canvas.addEventListener('touchstart',startDraw,{passive:false});
+canvas.addEventListener('touchmove',moveDraw,{passive:false});
+canvas.addEventListener('touchend',endDraw);
+
+function setColor(c,btn){
+  drawColor=c; erasing=false;
+  document.getElementById('eraserBtn').classList.remove('eraser-on');
+  document.querySelectorAll('.color-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}
+function setSize(s,btn){
+  drawSize=s;
+  document.querySelectorAll('.size-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}
+function toggleEraser(){
+  erasing=!erasing;
+  document.getElementById('eraserBtn').classList.toggle('eraser-on',erasing);
+}
+function clearCanvas(){
+  ctx.fillStyle='#ffffff';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+}
+const goOriginal=go;
+go=function(id){
+  goOriginal(id);
+  if(id==='desenho') setTimeout(initCanvas,50);
+};
+buildFraseNav();
+buildQuizzes();
+</script>
+</body>
+</html>
