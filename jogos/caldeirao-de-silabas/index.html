@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Caldeirão de sílabas</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@600;800;900&display=swap">
+<style>
+:root{color-scheme:dark;--bg:#0e1320;--panel:#171e30;--panel2:#1f2840;--line:#2c3757;--fg:#eef2ff;--mut:#9aa6c7;--red:#ff4d4d;--ok:#3ddc84;--warn:#ffcb3d;--bad:#ff7a59;--gem:#5ef0ff;--gold:#ffd76a}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--fg);font-family:'Nunito',system-ui,sans-serif;font-weight:700;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:12px 28px;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.app{max-width:900px;margin:0 auto;display:flex;flex-direction:column;gap:12px}
+header{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;justify-content:space-between}
+.back{color:var(--gem);text-decoration:none;font-size:14px;display:inline-block;margin-bottom:4px}
+h1{font-family:'Press Start 2P',monospace;font-size:clamp(14px,3.6vw,20px);line-height:1.4;margin:0;color:var(--gold);text-wrap:balance}
+.sub{font-size:13px;color:var(--mut);margin-top:2px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip,.ghost{min-height:44px;padding:0 14px;border-radius:12px;border:2px solid var(--line);background:var(--panel);color:var(--fg);font:inherit;font-weight:800;font-size:14px;cursor:pointer}
+.chip[aria-pressed="true"]{border-color:var(--gem);background:#0f3a44;color:#fff}
+.ghost:disabled{opacity:.35;cursor:default}
+.card{background:var(--panel);border:2px solid var(--line);border-radius:18px;padding:14px;display:flex;flex-direction:column;gap:12px}
+.tip{text-align:center;min-height:24px;color:var(--gem);font-size:15px}
+.actions{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.act{min-height:76px;border-radius:16px;border:0;color:#08110c;font:inherit;font-weight:900;font-size:clamp(16px,4vw,22px);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;box-shadow:0 5px 0 rgba(0,0,0,.4);transition:transform .08s}
+.act small{font-size:11px;font-weight:800;opacity:.75}
+.act:active{transform:translateY(4px);box-shadow:0 1px 0 rgba(0,0,0,.4)}
+.act.ok{background:var(--ok)}.act.mid{background:var(--warn)}.act.bad{background:var(--bad)}
+.act:disabled{opacity:.35}
+.row2{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.pill{background:rgba(10,14,28,.72);border:2px solid var(--line);border-radius:12px;padding:6px 10px;font-size:13px}
+.pill .k{font-family:'Press Start 2P',monospace;font-size:10px;color:var(--gold);display:block;margin-bottom:4px}
+.pill .v{font-size:15px;font-weight:900}
+.banner{position:absolute;left:50%;top:38%;transform:translate(-50%,-50%) scale(.6);z-index:6;opacity:0;pointer-events:none;text-align:center;font-family:'Press Start 2P',monospace;color:var(--gold);text-shadow:0 3px 0 #000;font-size:clamp(12px,3vw,18px);line-height:1.6}
+.banner small{display:block;font-family:'Nunito';font-size:clamp(15px,3.4vw,22px);color:#fff;margin-top:6px}
+.banner.show{animation:ban 2.2s ease-out}
+@keyframes ban{0%{opacity:0;transform:translate(-50%,-50%) scale(.5)}15%{opacity:1;transform:translate(-50%,-50%) scale(1.08)}25%{transform:translate(-50%,-50%) scale(1)}80%{opacity:1}100%{opacity:0;transform:translate(-50%,-70%) scale(1)}}
+.shake{animation:shake .4s}
+@keyframes shake{20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(4px)}}
+.rung{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:36px;line-height:1.1;transition:all .3s;white-space:nowrap}
+.rung.past{font-size:20px;opacity:.4}
+.rung.past::after{content:"✓";color:var(--ok);font-size:18px}
+.rung.next{font-size:20px;opacity:.28;filter:blur(1.5px)}
+.rung.now{font-size:clamp(36px,9vw,62px);font-weight:900;color:#fff;animation:pop .35s ease-out}
+@keyframes pop{from{transform:scale(.9);opacity:.4}to{transform:scale(1);opacity:1}}
+b.r{color:var(--red)}
+i.gh{font-style:normal;font-size:.55em;opacity:.55;margin:0 1px}
+.over{position:fixed;inset:0;background:rgba(5,8,18,.82);display:flex;align-items:center;justify-content:center;z-index:20;padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.panel{background:var(--panel);border:3px solid var(--gold);border-radius:22px;padding:22px;max-width:560px;width:100%;text-align:center;max-height:100%;overflow:auto}
+.panel h2{font-family:'Press Start 2P',monospace;color:var(--gold);font-size:clamp(14px,3.6vw,20px);line-height:1.5;margin:0 0 8px}
+.panel p{color:var(--mut);margin:0 0 14px;font-size:16px}
+.big{min-height:60px;padding:0 24px;border-radius:16px;border:0;background:var(--gem);color:#042a30;font:inherit;font-weight:900;font-size:19px;cursor:pointer;box-shadow:0 5px 0 rgba(0,0,0,.4)}
+.conf{position:fixed;top:-20px;width:10px;height:14px;z-index:30;pointer-events:none;animation:fall linear forwards}
+@keyframes fall{to{transform:translateY(110vh) rotate(720deg)}}
+[hidden]{display:none!important}
+@media (prefers-reduced-motion:reduce){.anim{animation-play-state:paused!important}}
+
+
+.scene{position:relative;border-radius:18px;border:2px solid var(--line);background:linear-gradient(#1a1030,#2a1a45);overflow:hidden;display:grid;grid-template-columns:1fr 1fr;align-items:end;min-height:230px}
+@media (max-width:640px){.scene{grid-template-columns:1fr}}
+.hud{position:absolute;left:10px;right:10px;top:10px;display:flex;justify-content:space-between;gap:8px;z-index:3;pointer-events:none}
+.cauld{position:relative;padding:44px 8px 0;display:flex;justify-content:center}
+.cauld svg{width:min(300px,86%);height:auto;overflow:visible;transition:filter .6s}
+.flame{transform-box:fill-box;transform-origin:50% 100%;animation:flick .5s ease-in-out infinite alternate}
+.flame:nth-child(2){animation-delay:.15s}.flame:nth-child(3){animation-delay:.3s}
+@keyframes flick{to{transform:scaleY(1.25) scaleX(.9)}}
+.bub{animation:rise 2.4s ease-in infinite;opacity:0}
+@keyframes rise{0%{transform:translateY(0);opacity:0}15%{opacity:.9}100%{transform:translateY(-58px);opacity:0}}
+.brew .liq{animation:flash .9s ease-out}
+@keyframes flash{0%{filter:brightness(2.4)}100%{filter:brightness(1)}}
+.shelf{padding:46px 12px 12px;display:flex;flex-wrap:wrap;gap:8px;align-content:flex-end;justify-content:center;min-height:120px}
+.bottle.nw{animation:bpop .6s cubic-bezier(.3,1.5,.5,1)}
+
+.bottle{position:relative;width:46px;height:62px}
+@keyframes bpop{from{transform:translateY(-70px) scale(.5);opacity:0}to{transform:none;opacity:1}}
+.bottle svg{display:block;width:46px;height:62px}
+.bottle span{position:absolute;left:0;right:0;top:30px;text-align:center;font-size:17px}
+.empty{width:46px;height:62px;border:2px dashed #4a3c6e;border-radius:10px;opacity:.5}
+.pic{font-size:clamp(64px,16vw,92px);text-align:center;line-height:1.1}
+.slots{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.slot{min-width:60px;min-height:56px;padding:6px 12px;border-radius:12px;border:3px dashed var(--line);display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:900;background:var(--panel2)}
+.slot.f{border-style:solid;border-color:var(--gem);background:#0f3a44;animation:pop .3s ease-out}
+.tiles{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.tile{min-width:76px;min-height:68px;padding:8px 16px;border-radius:14px;border:0;background:#8b5a2b;color:#fff;font:inherit;font-weight:900;font-size:26px;cursor:pointer;box-shadow:0 5px 0 #4a2f17,inset 0 3px 0 rgba(255,255,255,.2)}
+.tile:active{transform:translateY(4px);box-shadow:0 1px 0 #4a2f17}
+.tile.used{visibility:hidden}
+.ladder{display:flex;flex-direction:column;gap:6px;align-items:center;min-height:150px;justify-content:center}
+.cnt{display:flex;justify-content:space-between;font-size:13px;color:var(--mut)}
+
+</style>
+</head>
+<body>
+
+<div class="app">
+  <header>
+    <div>
+      <a class="back" href="../">‹ Voltar aos jogos</a>
+      <h1>Caldeirão de sílabas</h1>
+      <div class="sub">Monte as sílabas, depois fale em três degraus. Cada poção pronta enche a bancada</div>
+    </div>
+    <button class="ghost" id="snd" aria-pressed="true">Som: ligado</button>
+  </header>
+  <div class="chips" id="chips" role="group" aria-label="Grupo de palavras"></div>
+
+  <section class="scene" id="scene" aria-label="Caldeirão e bancada de poções">
+    <div class="hud">
+      <div class="pill"><span class="k" id="stName">APRENDIZ</span><span class="v" id="stSub">Primeira poção</span></div>
+      <div class="pill" style="text-align:right"><span class="k">POÇÕES</span><span class="v" id="cnt">0/0</span></div>
+    </div>
+    <div class="cauld" id="cauld">
+      <svg viewBox="0 0 300 220" aria-hidden="true">
+        <defs><clipPath id="potclip"><path d="M60,110 C60,180 90,200 150,200 C210,200 240,180 240,110 Z"/></clipPath></defs>
+        <g id="flames"><path class="flame" d="M110,214 C100,200 112,192 110,180 C122,190 124,204 118,214Z" fill="#ff9a3c"/><path class="flame" d="M140,216 C128,198 144,190 140,172 C156,186 158,204 150,216Z" fill="#ffd76a"/><path class="flame" d="M172,214 C164,202 174,194 172,184 C184,194 186,204 180,214Z" fill="#ff9a3c"/></g>
+        <path d="M70,188 L58,216 L82,216Z M230,188 L242,216 L218,216Z" fill="#2b2433"/>
+        <path d="M60,110 C60,180 90,200 150,200 C210,200 240,180 240,110 Z" fill="#2b2433" stroke="#4d4560" stroke-width="3"/>
+        <g clip-path="url(#potclip)"><rect class="liq" id="liq" x="50" y="150" width="200" height="60" fill="#3ddc84"/><ellipse id="liqTop" cx="150" cy="150" rx="90" ry="10" fill="#3ddc84" opacity=".7"/></g>
+        <g id="bubs" fill="#fff"><circle class="bub" cx="110" cy="146" r="5" style="animation-delay:0s"/><circle class="bub" cx="140" cy="148" r="7" style="animation-delay:.6s"/><circle class="bub" cx="170" cy="146" r="4" style="animation-delay:1.1s"/><circle class="bub" cx="190" cy="148" r="6" style="animation-delay:1.7s"/><circle class="bub" cx="125" cy="150" r="3" style="animation-delay:.3s"/></g>
+        <ellipse cx="150" cy="110" rx="92" ry="14" fill="none" stroke="#6a5f80" stroke-width="7"/>
+      </svg>
+    </div>
+    <div class="shelf" id="shelf" aria-label="Poções prontas"></div>
+    <div class="banner" id="banner"></div>
+  </section>
+
+  <section class="card">
+    <div class="cnt"><span id="wordN">Palavra 1</span><span id="trains"></span></div>
+    <div class="pic" id="pic"></div>
+
+    <div id="buildBox">
+      <div class="slots" id="slots"></div>
+      <p style="text-align:center;margin:10px 0;color:var(--mut);font-size:14px">Toque nas sílabas na ordem certa para montar a poção</p>
+      <div class="tiles" id="tiles"></div>
+    </div>
+
+    <div id="sayBox" hidden>
+      <div class="ladder" id="ladder" aria-live="polite"></div>
+      <div class="actions">
+        <button class="act ok" id="bOk">Suave<small>língua solta</small></button>
+        <button class="act mid" id="bMid">Quase<small>tenta de novo</small></button>
+        <button class="act bad" id="bBad">Tensão<small>volta um degrau</small></button>
+      </div>
+    </div>
+
+    <div class="tip" id="tip"></div>
+    <div class="row2">
+      <button class="ghost" id="bSwap">Trocar palavra</button>
+      <button class="ghost" id="bNew">Novo caldeirão</button>
+    </div>
+  </section>
+</div>
+
+<div class="over" id="over" hidden>
+  <div class="panel">
+    <h2>Bancada completa!</h2>
+    <p id="overP"></p>
+    <button class="big" id="again">Novo caldeirão</button>
+  </div>
+</div>
+
+<script>
+(function(){'use strict';
+
+var $=function(id){return document.getElementById(id)};
+function shuffle(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t}return a}
+/* [palavra, degrau 1, degrau 2, figura] */
+var G={
+ trdr:[['trem','te-rem','t(e)rem','🚂'],['trilho','ti-ri-lho','t(i)ri-lho','🛤️'],['trigo','ti-ri-go','t(i)ri-go','🌾'],['trovão','to-ro-vão','t(o)ro-vão','⚡'],['tronco','to-ron-co','t(o)ron-co','🪵'],['trompete','to-rom-pe-te','t(o)rom-pe-te','🎺'],['estrela','es-te-re-la','es-t(e)re-la','⭐'],['triângulo','ti-ri-ân-gu-lo','t(i)ri-ân-gu-lo','🔺'],['dragão','da-ra-gão','d(a)ra-gão','🐉'],['pedra','pe-da-ra','pe-d(a)ra','🪨'],['quadro','qua-da-ro','qua-d(a)ro','🖼️']],
+ brpr:[['braço','ba-ra-ço','b(a)ra-ço','💪'],['brinquedo','bi-rin-que-do','b(i)rin-que-do','🧸'],['cobra','co-bo-ra','co-b(o)ra','🐍'],['zebra','ze-be-ra','ze-b(e)ra','🦓'],['prato','pa-ra-to','p(a)ra-to','🍽️'],['presente','pe-re-sen-te','p(e)re-sen-te','🎁']],
+ crgr:[['crocodilo','co-ro-co-di-lo','c(o)ro-co-di-lo','🐊'],['grama','ga-ra-ma','g(a)ra-ma','🌱'],['gruta','gu-ru-ta','g(u)ru-ta','🕳️'],['fruta','fu-ru-ta','f(u)ru-ta','🍎'],['frio','fi-ri-o','f(i)ri-o','🥶'],['grilo','gu-ri-lo','g(u)ri-lo','🦗']]
+};
+var GROUPS=[['all','Todos'],['trdr','TR · DR'],['brpr','BR · PR'],['crgr','CR · GR · FR']];
+function words(g){return g==='all'?G.trdr.concat(G.brpr,G.crgr):G[g]}
+function hl(t){return t.replace(/[rR]/g,function(m){return '<b class="r">'+m+'</b>'})}
+function wordHTML(s){var out='',i=0;while(i<s.length){var c=s[i];if(c==='('){var j=s.indexOf(')',i);out+='<i class="gh">'+hl(s.slice(i+1,j))+'</i>';i=j+1}else{out+=hl(c);i++}}return out}
+function loadSave(key,def){try{var r=localStorage.getItem(key);if(r){var o=JSON.parse(r);if(o&&typeof o==='object'){for(var k in o)def[k]=o[k]}}}catch(e){}return def}
+function storeSave(key,o){try{localStorage.setItem(key,JSON.stringify(o))}catch(e){}}
+var AC=null,soundOn=true;
+function ac(){if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)()}catch(e){}}if(AC&&AC.state==='suspended')AC.resume();return AC}
+function beep(f,d,t,v,w){if(!soundOn)return;var a=ac();if(!a)return;var o=a.createOscillator(),g=a.createGain();o.type=t||'square';o.frequency.value=f;var s=a.currentTime+(w||0);g.gain.setValueAtTime(0.0001,s);g.gain.exponentialRampToValueAtTime(v||.08,s+.01);g.gain.exponentialRampToValueAtTime(.0001,s+d);o.connect(g);g.connect(a.destination);o.start(s);o.stop(s+d+.02)}
+var snd={
+ ok:function(){beep(520,.1,'triangle',.1);beep(780,.14,'triangle',.1,.08)},
+ pop:function(){beep(700,.07,'triangle',.09);beep(1000,.08,'triangle',.07,.05)},
+ mid:function(){beep(300,.16,'sine',.09)},
+ bad:function(){beep(220,.2,'sine',.09);beep(180,.2,'sine',.08,.1)},
+ evolve:function(){[523,659,784,1046].forEach(function(f,i){beep(f,.18,'triangle',.1,i*.1)})},
+ win:function(){[523,659,784,1046,784,1046,1318].forEach(function(f,i){beep(f,.2,'triangle',.1,i*.12)})}
+};
+function confetti(){var c=['#ff4d4d','#ffd76a','#5ef0ff','#3ddc84','#c792ff'];for(var i=0;i<46;i++){var d=document.createElement('div');d.className='conf';d.style.left=Math.random()*100+'vw';d.style.background=c[i%5];d.style.animationDuration=(2+Math.random()*2.2)+'s';d.style.animationDelay=(Math.random()*.6)+'s';document.body.appendChild(d);setTimeout((function(x){return function(){x.remove()}})(d),5200)}}
+function wireSound(btn){btn.addEventListener('click',function(){soundOn=!soundOn;btn.setAttribute('aria-pressed',soundOn);btn.textContent='Som: '+(soundOn?'ligado':'desligado')})}
+function renderChips(el,cur){var h='';GROUPS.forEach(function(c){h+='<button class="chip" data-g="'+c[0]+'" aria-pressed="'+(c[0]===cur)+'">'+c[1]+'</button>'});el.innerHTML=h}
+
+
+var STAGES=[
+ {n:'APRENDIZ',sub:'Primeira poção',c:'#3ddc84'},
+ {n:'ALQUIMISTA',sub:'Poção brilhando',c:'#5ef0ff'},
+ {n:'MESTRE DAS POÇÕES',sub:'Fumaça colorida',c:'#c792ff'},
+ {n:'LENDA DO CALDEIRÃO',sub:'Poção dourada',c:'#ffd76a'}
+];
+var KEY='caldeirao-silabas-v1';
+var save=loadSave(KEY,{done:0,group:'all'});
+var S={group:save.group,pool:[],i:0,phase:'build',syl:[],slots:[],tiles:[],step:0,pot:[],stage:0,target:0,over:false};
+function stageOf(n){return n>=S.target?4:Math.min(3,Math.floor(n/S.target*4))}
+function start(){
+ S.pool=shuffle(words(S.group)).slice(0,8);S.target=S.pool.length;S.i=0;S.pot=[];S.stage=0;S.over=false;
+ $('over').hidden=true;setWord();renderAll();
+}
+function setWord(){
+ var w=S.pool[S.i];S.syl=w[1].split('-');S.slots=[];S.step=0;S.phase='build';
+ S.tiles=shuffle(S.syl.map(function(t,k){return {t:t,used:false}}));setTip('');
+}
+function renderAll(){renderChips($('chips'),S.group);renderScene();renderCard();$('trains').textContent=save.done?('Caldeirões completos: '+save.done):''}
+function renderScene(){
+ var p=S.target?S.pot.length/S.target:0,st=STAGES[Math.min(S.stage,3)];
+ var y=150-p*46;
+ $('liq').setAttribute('y',y);$('liqTop').setAttribute('cy',y);$('liq').setAttribute('fill',st.c);$('liqTop').setAttribute('fill',st.c);
+ $('cauld').firstElementChild.style.filter='drop-shadow(0 0 '+(8+S.stage*7)+'px '+st.c+')';
+ $('bubs').setAttribute('fill',st.c==='#ffd76a'?'#fff3b0':'#fff');
+ $('stName').textContent=S.over?'MESTRE FINAL':st.n;$('stSub').textContent=S.over?'Bancada completa':st.sub;
+ $('cnt').textContent=S.pot.length+'/'+S.target;
+ var h='';
+ S.pot.forEach(function(p,k){h+='<div class="bottle'+(k===S.pot.length-1?' nw':'')+'"><svg viewBox="0 0 46 62"><rect x="17" y="2" width="12" height="10" rx="2" fill="#c9ced6"/><path d="M14,14 H32 L40,34 C44,48 38,60 23,60 C8,60 2,48 6,34Z" fill="'+p.c+'" opacity=".92" stroke="#fff" stroke-opacity=".6" stroke-width="2"/></svg><span>'+p.e+'</span></div>'});
+ for(var k=S.pot.length;k<S.target;k++)h+='<div class="empty"></div>';
+ $('shelf').innerHTML=h;
+}
+function renderCard(){
+ var w=S.pool[S.i];
+ $('pic').textContent=w[3];$('wordN').textContent=S.over?'Tudo pronto':'Palavra '+Math.min(S.i+1,S.target)+' de '+S.target;
+ $('buildBox').hidden=S.phase!=='build'||S.over;$('sayBox').hidden=S.phase!=='say'||S.over;
+ if(S.phase==='build'){
+  var sl='';S.syl.forEach(function(t,k){sl+='<div class="slot'+(k<S.slots.length?' f':'')+'">'+(k<S.slots.length?hl(S.slots[k]):'')+'</div>'});$('slots').innerHTML=sl;
+  var tl='';S.tiles.forEach(function(x,k){tl+='<button class="tile'+(x.used?' used':'')+'" data-k="'+k+'">'+hl(x.t)+'</button>'});$('tiles').innerHTML=tl;
+ }else{
+  var forms=[w[1],w[2],w[0]];
+  $('ladder').innerHTML=forms.map(function(f,k){var c=k<S.step?'past':k===S.step?'now':'next';return '<div class="rung '+c+'"><span>'+wordHTML(f)+'</span></div>'}).join('');
+ }
+ $('bSwap').disabled=S.over||S.i>=S.pool.length-1||S.phase==='say';
+}
+function setTip(t){$('tip').textContent=t}
+function tapTile(k){
+ if(S.phase!=='build'||S.over)return;ac();var x=S.tiles[k];if(!x||x.used)return;
+ if(x.t===S.syl[S.slots.length]){
+  x.used=true;S.slots.push(x.t);snd.pop();setTip('');
+  if(S.slots.length===S.syl.length){S.phase='say';S.step=0;snd.evolve();var c=$('cauld');c.classList.remove('brew');void c.offsetWidth;c.classList.add('brew');setTip('Poção misturada! Agora fale em três degraus.')}
+  renderCard();
+ }else{
+  snd.mid();var el=$('tiles').children[k];el.classList.remove('shake');void el.offsetWidth;el.classList.add('shake');setTip('Esse não é o próximo som. Procure o início da palavra.');
+ }
+}
+function ok(){
+ if(S.phase!=='say'||S.over)return;snd.ok();
+ if(S.step<2){S.step++;renderCard();setTip(S.step===1?'A vogal fantasma já está sumindo.':'Agora a palavra inteira, língua de pluma.');return}
+ var w=S.pool[S.i],old=S.stage;
+ S.pot.push({c:STAGES[Math.min(stageOf(S.pot.length+1),3)].c,e:w[3]});
+ S.stage=stageOf(S.pot.length);
+ if(S.pot.length>=S.target){finish();return}
+ if(S.stage>old)evolve(S.stage);
+ S.i++;setWord();renderScene();renderCard();setTip('Poção pronta! Próxima palavra.');
+}
+function mid(){if(S.phase!=='say'||S.over)return;snd.mid();setTip('Quase! Repete mais devagar, sem apertar.')}
+function bad(){
+ if(S.phase!=='say'||S.over)return;snd.bad();
+ if(S.step>0){S.step--;setTip('Volta um degrau e solta a língua.')}else setTip('Língua de geleia: solta antes de falar.');
+ var l=$('ladder');l.classList.remove('shake');void l.offsetWidth;l.classList.add('shake');renderCard();
+}
+function evolve(st){
+ snd.evolve();var b=$('banner');b.innerHTML='EVOLUIU!<small>'+STAGES[Math.min(st,3)].n.toLowerCase().replace(/^./,function(c){return c.toUpperCase()})+'</small>';
+ b.classList.remove('show');void b.offsetWidth;b.classList.add('show');
+}
+function finish(){
+ S.over=true;snd.win();save.done=(save.done||0)+1;storeSave(KEY,save);renderScene();renderCard();
+ setTimeout(function(){$('overP').textContent='Todas as poções ficaram prontas. Caldeirões completos: '+save.done+'.';$('over').hidden=false;confetti()},900);
+}
+function swap(){if(S.over||S.phase==='say'||S.i>=S.pool.length-1)return;S.pool.push(S.pool.splice(S.i,1)[0]);setWord();renderCard();setTip('Palavra trocada.')}
+$('chips').addEventListener('click',function(e){var b=e.target.closest('.chip');if(!b)return;S.group=b.dataset.g;save.group=S.group;storeSave(KEY,save);start()});
+$('tiles').addEventListener('click',function(e){var b=e.target.closest('.tile');if(!b)return;tapTile(+b.dataset.k)});
+$('bOk').addEventListener('click',ok);$('bMid').addEventListener('click',mid);$('bBad').addEventListener('click',bad);
+$('bSwap').addEventListener('click',swap);$('bNew').addEventListener('click',start);$('again').addEventListener('click',start);
+wireSound($('snd'));
+start();window.__S=S;
+
+})();
+</script>
+</body>
+</html>

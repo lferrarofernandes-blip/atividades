@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Detetive de língua</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@600;800;900&display=swap">
+<style>
+:root{color-scheme:dark;--bg:#0e1320;--panel:#171e30;--panel2:#1f2840;--line:#2c3757;--fg:#eef2ff;--mut:#9aa6c7;--red:#ff4d4d;--ok:#3ddc84;--warn:#ffcb3d;--bad:#ff7a59;--gem:#5ef0ff;--gold:#ffd76a}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--fg);font-family:'Nunito',system-ui,sans-serif;font-weight:700;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:12px 28px;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.app{max-width:900px;margin:0 auto;display:flex;flex-direction:column;gap:12px}
+header{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;justify-content:space-between}
+.back{color:var(--gem);text-decoration:none;font-size:14px;display:inline-block;margin-bottom:4px}
+h1{font-family:'Press Start 2P',monospace;font-size:clamp(14px,3.6vw,20px);line-height:1.4;margin:0;color:var(--gold);text-wrap:balance}
+.sub{font-size:13px;color:var(--mut);margin-top:2px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip,.ghost{min-height:44px;padding:0 14px;border-radius:12px;border:2px solid var(--line);background:var(--panel);color:var(--fg);font:inherit;font-weight:800;font-size:14px;cursor:pointer}
+.chip[aria-pressed="true"]{border-color:var(--gem);background:#0f3a44;color:#fff}
+.ghost:disabled{opacity:.35;cursor:default}
+.card{background:var(--panel);border:2px solid var(--line);border-radius:18px;padding:14px;display:flex;flex-direction:column;gap:12px}
+.tip{text-align:center;min-height:24px;color:var(--gem);font-size:15px}
+.actions{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.act{min-height:76px;border-radius:16px;border:0;color:#08110c;font:inherit;font-weight:900;font-size:clamp(16px,4vw,22px);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;box-shadow:0 5px 0 rgba(0,0,0,.4);transition:transform .08s}
+.act small{font-size:11px;font-weight:800;opacity:.75}
+.act:active{transform:translateY(4px);box-shadow:0 1px 0 rgba(0,0,0,.4)}
+.act.ok{background:var(--ok)}.act.mid{background:var(--warn)}.act.bad{background:var(--bad)}
+.act:disabled{opacity:.35}
+.row2{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.pill{background:rgba(10,14,28,.72);border:2px solid var(--line);border-radius:12px;padding:6px 10px;font-size:13px}
+.pill .k{font-family:'Press Start 2P',monospace;font-size:10px;color:var(--gold);display:block;margin-bottom:4px}
+.pill .v{font-size:15px;font-weight:900}
+.banner{position:absolute;left:50%;top:38%;transform:translate(-50%,-50%) scale(.6);z-index:6;opacity:0;pointer-events:none;text-align:center;font-family:'Press Start 2P',monospace;color:var(--gold);text-shadow:0 3px 0 #000;font-size:clamp(12px,3vw,18px);line-height:1.6}
+.banner small{display:block;font-family:'Nunito';font-size:clamp(15px,3.4vw,22px);color:#fff;margin-top:6px}
+.banner.show{animation:ban 2.2s ease-out}
+@keyframes ban{0%{opacity:0;transform:translate(-50%,-50%) scale(.5)}15%{opacity:1;transform:translate(-50%,-50%) scale(1.08)}25%{transform:translate(-50%,-50%) scale(1)}80%{opacity:1}100%{opacity:0;transform:translate(-50%,-70%) scale(1)}}
+.shake{animation:shake .4s}
+@keyframes shake{20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(4px)}}
+.rung{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:36px;line-height:1.1;transition:all .3s;white-space:nowrap}
+.rung.past{font-size:20px;opacity:.4}
+.rung.past::after{content:"✓";color:var(--ok);font-size:18px}
+.rung.next{font-size:20px;opacity:.28;filter:blur(1.5px)}
+.rung.now{font-size:clamp(36px,9vw,62px);font-weight:900;color:#fff;animation:pop .35s ease-out}
+@keyframes pop{from{transform:scale(.9);opacity:.4}to{transform:scale(1);opacity:1}}
+b.r{color:var(--red)}
+i.gh{font-style:normal;font-size:.55em;opacity:.55;margin:0 1px}
+.over{position:fixed;inset:0;background:rgba(5,8,18,.82);display:flex;align-items:center;justify-content:center;z-index:20;padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.panel{background:var(--panel);border:3px solid var(--gold);border-radius:22px;padding:22px;max-width:560px;width:100%;text-align:center;max-height:100%;overflow:auto}
+.panel h2{font-family:'Press Start 2P',monospace;color:var(--gold);font-size:clamp(14px,3.6vw,20px);line-height:1.5;margin:0 0 8px}
+.panel p{color:var(--mut);margin:0 0 14px;font-size:16px}
+.big{min-height:60px;padding:0 24px;border-radius:16px;border:0;background:var(--gem);color:#042a30;font:inherit;font-weight:900;font-size:19px;cursor:pointer;box-shadow:0 5px 0 rgba(0,0,0,.4)}
+.conf{position:fixed;top:-20px;width:10px;height:14px;z-index:30;pointer-events:none;animation:fall linear forwards}
+@keyframes fall{to{transform:translateY(110vh) rotate(720deg)}}
+[hidden]{display:none!important}
+@media (prefers-reduced-motion:reduce){.anim{animation-play-state:paused!important}}
+
+
+.hud{display:flex;justify-content:space-between;gap:8px}
+.mouths{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+@media (max-width:640px){.mouths{grid-template-columns:1fr}}
+.mcard{background:var(--panel2);border:3px solid var(--line);border-radius:16px;padding:8px;cursor:pointer;font:inherit;color:var(--fg);display:flex;flex-direction:column;gap:6px;align-items:center;min-height:56px}
+.mcard svg{width:100%;height:auto;display:block;border-radius:10px;background:#1a2036}
+.mcard .lb{font-family:'Press Start 2P',monospace;font-size:11px;color:var(--gold)}
+.mcard.right{border-color:var(--ok);background:#12351f}
+.mcard.wrong{border-color:var(--bad);animation:shake .4s}
+.mcard:disabled{cursor:default}
+.q{text-align:center;font-size:clamp(20px,5vw,30px);font-weight:900}
+.q b{color:var(--gem)}
+.mosaic{display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(3,1fr);gap:0;position:relative;border-radius:14px;overflow:hidden;border:3px solid var(--line);aspect-ratio:4/3;max-width:340px;margin:0 auto;width:100%;background:#0b1020}
+.mosaic svg{position:absolute;inset:0;width:100%;height:100%}
+.tl{background:#232c4a;border:1px solid #0b1020;display:flex;align-items:center;justify-content:center;color:#4a5680;font-family:'Press Start 2P',monospace;font-size:14px;transition:opacity .6s,transform .6s;z-index:2;position:relative}
+.tl.off{opacity:0;transform:scale(.6);pointer-events:none}
+.cnt{display:flex;justify-content:space-between;font-size:13px;color:var(--mut)}
+
+</style>
+</head>
+<body>
+
+<div class="app">
+  <header>
+    <div>
+      <a class="back" href="../">‹ Voltar aos jogos</a>
+      <h1>Detetive de língua</h1>
+      <div class="sub">Descubra qual boca tem a língua dura e qual tem a língua mole. Cada acerto abre uma peça do tesouro</div>
+    </div>
+    <button class="ghost" id="snd" aria-pressed="true">Som: ligado</button>
+  </header>
+
+  <section class="card">
+    <div class="hud">
+      <div class="pill"><span class="k" id="stName">DETETIVE NOVATO</span><span class="v" id="stSub">0 pistas</span></div>
+      <div class="pill" style="text-align:right"><span class="k">PEÇAS</span><span class="v" id="cnt">0/12</span></div>
+    </div>
+    <div class="mosaic" id="mosaic" aria-label="Tesouro escondido">
+      <svg viewBox="0 0 400 300" aria-hidden="true" preserveAspectRatio="none">
+        <rect width="400" height="300" fill="#1b2a5a"/>
+        <circle cx="200" cy="150" r="120" fill="#27407f"/>
+        <polygon points="200,50 290,120 250,240 150,240 110,120" fill="#5ef0ff" stroke="#fff" stroke-width="6"/>
+        <polygon points="200,50 250,240 150,240" fill="#a8f8ff" opacity=".7"/>
+        <polygon points="110,120 290,120 200,50" fill="#fff" opacity=".35"/>
+        <g fill="#ffd76a"><circle cx="60" cy="60" r="5"/><circle cx="340" cy="70" r="6"/><circle cx="70" cy="240" r="6"/><circle cx="335" cy="240" r="5"/></g>
+      </svg>
+      <div id="tiles" style="display:contents"></div>
+    </div>
+    <div class="banner" id="banner" style="top:30%"></div>
+  </section>
+
+  <section class="card">
+    <div class="cnt"><span id="rN">Rodada 1</span><span id="trains"></span></div>
+    <div class="q" id="q"></div>
+    <div class="mouths" id="mouths"></div>
+    <div class="tip" id="tip"></div>
+    <div class="row2"><button class="ghost" id="bNew">Novo tesouro</button></div>
+  </section>
+</div>
+
+<div class="over" id="over" hidden>
+  <div class="panel">
+    <h2>Tesouro revelado!</h2>
+    <p id="overP"></p>
+    <button class="big" id="again">Novo tesouro</button>
+  </div>
+</div>
+
+<script>
+(function(){'use strict';
+
+var $=function(id){return document.getElementById(id)};
+function shuffle(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t}return a}
+/* [palavra, degrau 1, degrau 2, figura] */
+var G={
+ trdr:[['trem','te-rem','t(e)rem','🚂'],['trilho','ti-ri-lho','t(i)ri-lho','🛤️'],['trigo','ti-ri-go','t(i)ri-go','🌾'],['trovão','to-ro-vão','t(o)ro-vão','⚡'],['tronco','to-ron-co','t(o)ron-co','🪵'],['trompete','to-rom-pe-te','t(o)rom-pe-te','🎺'],['estrela','es-te-re-la','es-t(e)re-la','⭐'],['triângulo','ti-ri-ân-gu-lo','t(i)ri-ân-gu-lo','🔺'],['dragão','da-ra-gão','d(a)ra-gão','🐉'],['pedra','pe-da-ra','pe-d(a)ra','🪨'],['quadro','qua-da-ro','qua-d(a)ro','🖼️']],
+ brpr:[['braço','ba-ra-ço','b(a)ra-ço','💪'],['brinquedo','bi-rin-que-do','b(i)rin-que-do','🧸'],['cobra','co-bo-ra','co-b(o)ra','🐍'],['zebra','ze-be-ra','ze-b(e)ra','🦓'],['prato','pa-ra-to','p(a)ra-to','🍽️'],['presente','pe-re-sen-te','p(e)re-sen-te','🎁']],
+ crgr:[['crocodilo','co-ro-co-di-lo','c(o)ro-co-di-lo','🐊'],['grama','ga-ra-ma','g(a)ra-ma','🌱'],['gruta','gu-ru-ta','g(u)ru-ta','🕳️'],['fruta','fu-ru-ta','f(u)ru-ta','🍎'],['frio','fi-ri-o','f(i)ri-o','🥶'],['grilo','gu-ri-lo','g(u)ri-lo','🦗']]
+};
+var GROUPS=[['all','Todos'],['trdr','TR · DR'],['brpr','BR · PR'],['crgr','CR · GR · FR']];
+function words(g){return g==='all'?G.trdr.concat(G.brpr,G.crgr):G[g]}
+function hl(t){return t.replace(/[rR]/g,function(m){return '<b class="r">'+m+'</b>'})}
+function wordHTML(s){var out='',i=0;while(i<s.length){var c=s[i];if(c==='('){var j=s.indexOf(')',i);out+='<i class="gh">'+hl(s.slice(i+1,j))+'</i>';i=j+1}else{out+=hl(c);i++}}return out}
+function loadSave(key,def){try{var r=localStorage.getItem(key);if(r){var o=JSON.parse(r);if(o&&typeof o==='object'){for(var k in o)def[k]=o[k]}}}catch(e){}return def}
+function storeSave(key,o){try{localStorage.setItem(key,JSON.stringify(o))}catch(e){}}
+var AC=null,soundOn=true;
+function ac(){if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)()}catch(e){}}if(AC&&AC.state==='suspended')AC.resume();return AC}
+function beep(f,d,t,v,w){if(!soundOn)return;var a=ac();if(!a)return;var o=a.createOscillator(),g=a.createGain();o.type=t||'square';o.frequency.value=f;var s=a.currentTime+(w||0);g.gain.setValueAtTime(0.0001,s);g.gain.exponentialRampToValueAtTime(v||.08,s+.01);g.gain.exponentialRampToValueAtTime(.0001,s+d);o.connect(g);g.connect(a.destination);o.start(s);o.stop(s+d+.02)}
+var snd={
+ ok:function(){beep(520,.1,'triangle',.1);beep(780,.14,'triangle',.1,.08)},
+ pop:function(){beep(700,.07,'triangle',.09);beep(1000,.08,'triangle',.07,.05)},
+ mid:function(){beep(300,.16,'sine',.09)},
+ bad:function(){beep(220,.2,'sine',.09);beep(180,.2,'sine',.08,.1)},
+ evolve:function(){[523,659,784,1046].forEach(function(f,i){beep(f,.18,'triangle',.1,i*.1)})},
+ win:function(){[523,659,784,1046,784,1046,1318].forEach(function(f,i){beep(f,.2,'triangle',.1,i*.12)})}
+};
+function confetti(){var c=['#ff4d4d','#ffd76a','#5ef0ff','#3ddc84','#c792ff'];for(var i=0;i<46;i++){var d=document.createElement('div');d.className='conf';d.style.left=Math.random()*100+'vw';d.style.background=c[i%5];d.style.animationDuration=(2+Math.random()*2.2)+'s';d.style.animationDelay=(Math.random()*.6)+'s';document.body.appendChild(d);setTimeout((function(x){return function(){x.remove()}})(d),5200)}}
+function wireSound(btn){btn.addEventListener('click',function(){soundOn=!soundOn;btn.setAttribute('aria-pressed',soundOn);btn.textContent='Som: '+(soundOn?'ligado':'desligado')})}
+function renderChips(el,cur){var h='';GROUPS.forEach(function(c){h+='<button class="chip" data-g="'+c[0]+'" aria-pressed="'+(c[0]===cur)+'">'+c[1]+'</button>'});el.innerHTML=h}
+
+
+var KEY='detetive-lingua-v1';
+var save=loadSave(KEY,{done:0});
+var TOTAL=12;
+var NAMES=['DETETIVE NOVATO','DETETIVE ESPERTO','DETETIVE CRAQUE','MESTRE DETETIVE'];
+var S={round:0,found:0,answer:'',kinds:[],locked:false,over:false,hits:0};
+function smooth(pts){var n=pts.length,d='M'+pts[0][0].toFixed(1)+','+pts[0][1].toFixed(1);for(var i=0;i<n;i++){var p0=pts[(i-1+n)%n],p1=pts[i],p2=pts[(i+1)%n],p3=pts[(i+2)%n];var c1x=p1[0]+(p2[0]-p0[0])/6,c1y=p1[1]+(p2[1]-p0[1])/6,c2x=p2[0]-(p3[0]-p1[0])/6,c2y=p2[1]-(p3[1]-p1[1])/6;d+=' C'+c1x.toFixed(1)+','+c1y.toFixed(1)+' '+c2x.toFixed(1)+','+c2y.toFixed(1)+' '+p2[0].toFixed(1)+','+p2[1].toFixed(1)}return d+'Z'}
+/* k = espessura (1 mole, .45 dura) ; tx = ponta */
+function tongue(tx,ty,h,k){var hh=150+(h-150)*1;return smooth([[66,214],[96,hh+2],[170,hh],[Math.max(tx-48,186),(hh+ty)/2],[tx,ty],[tx-12,ty+18*k],[tx-64,Math.max(ty+46*k,(hh+ty)/2+34*k)],[150,206],[100,212]])}
+var UP="M0,0 H318 V90 L296,96 C288,86 282,82 270,78 C220,56 150,44 100,56 C70,64 58,100 56,170 L56,215 H0Z";
+function mouthSVG(kind,idx){
+ var lip=kind==='hard'?'<rect x="300" y="86" width="26" height="8" rx="4" fill="#d56a6a"/>':'';
+ var cls=kind==='hard'?'hardT':'softT';
+ var t=kind==='hard'?tongue(298,98,138,.45):tongue(270,158,152,1);
+ return '<svg viewBox="0 0 360 240" aria-hidden="true"><path d="'+UP+'" fill="#7a3b46"/>'+
+  '<g><path class="'+cls+'" id="t'+idx+'" d="'+t+'" fill="#ff8a9a" stroke="#ff5f78" stroke-width="3"/></g>'+
+  '<rect x="296" y="98" width="28" height="9" rx="3" fill="#fff"/>'+lip+'</svg>';
+}
+function start(){
+ S.round=0;S.found=0;S.over=false;S.locked=false;S.hits=0;$('over').hidden=true;buildTiles();nextRound();renderHud();
+}
+function buildTiles(){var h='';for(var k=0;k<TOTAL;k++)h+='<div class="tl" id="tl'+k+'">?</div>';$('tiles').innerHTML=h}
+function renderHud(){
+ var lv=Math.min(3,Math.floor(S.found/TOTAL*4));
+ $('stName').textContent=S.over?'MESTRE DETETIVE':NAMES[lv];$('stSub').textContent=S.hits+' pistas certas';
+ $('cnt').textContent=S.found+'/'+TOTAL;$('trains').textContent=save.done?('Tesouros: '+save.done):'';
+ for(var k=0;k<TOTAL;k++){var t=$('tl'+k);if(t){if(k<S.found)t.classList.add('off');else t.classList.remove('off')}}
+}
+function nextRound(){
+ S.locked=false;S.round++;
+ S.answer=Math.random()<.5?'hard':'soft';
+ var kinds=[S.answer==='hard'?'hard':'soft'];
+ /* 3 bocas: uma é a resposta; as outras duas são do tipo oposto */
+ var other=S.answer==='hard'?'soft':'hard';kinds.push(other,other);S.kinds=shuffle(kinds);
+ $('q').innerHTML='Cadê a língua <b>'+(S.answer==='hard'?'DURA':'MOLE')+'</b>?';
+ $('rN').textContent='Rodada '+S.round;
+ var h='';S.kinds.forEach(function(k,i){h+='<button class="mcard" data-i="'+i+'" aria-label="Boca '+(i+1)+'">'+mouthSVG(k,i)+'<span class="lb">BOCA '+(i+1)+'</span></button>'});
+ $('mouths').innerHTML=h;setTip('Olhe bem: a dura treme e fica apertada. A mole balança de leve.');
+ animate();
+}
+var raf=0;
+function animate(){
+ cancelAnimationFrame(raf);
+ var t0=performance.now();
+ function f(now){
+  var t=(now-t0)/1000;
+  S.kinds.forEach(function(k,i){
+   var el=document.getElementById('t'+i);if(!el)return;
+   if(k==='hard'){var tr=Math.sin(t*38+i)*2.2;el.setAttribute('d',tongue(298+tr,98+Math.sin(t*31+i)*1.5,138,.45))}
+   else{var sw=Math.sin(t*1.6+i);el.setAttribute('d',tongue(270+sw*30,158+Math.sin(t*1.6+i)*6,152,1))}
+  });
+  raf=requestAnimationFrame(f);
+ }
+ raf=requestAnimationFrame(f);
+}
+function setTip(t){$('tip').textContent=t}
+function pick(i){
+ if(S.locked||S.over)return;ac();var cards=$('mouths').children;
+ if(S.kinds[i]===S.answer){
+  S.locked=true;cards[i].classList.add('right');snd.ok();S.found++;S.hits++;
+  var old=Math.floor((S.found-1)/TOTAL*4),nw=Math.min(3,Math.floor(S.found/TOTAL*4));
+  renderHud();
+  if(S.found>=TOTAL){finish();return}
+  if(nw>old){snd.evolve();var b=$('banner');b.innerHTML='EVOLUIU!<small>'+NAMES[nw]+'</small>';b.classList.remove('show');void b.offsetWidth;b.classList.add('show')}
+  setTip('Isso! Peça do tesouro aberta.');
+  setTimeout(nextRound,1100);
+ }else{
+  snd.mid();cards[i].classList.remove('wrong');void cards[i].offsetWidth;cards[i].classList.add('wrong');setTip('Quase! Observe de novo e tente outra boca.');
+ }
+}
+function finish(){
+ S.over=true;S.locked=true;cancelAnimationFrame(raf);snd.win();save.done=(save.done||0)+1;storeSave(KEY,save);renderHud();
+ setTimeout(function(){$('overP').textContent='Você achou todas as línguas. Tesouros revelados: '+save.done+'.';$('over').hidden=false;confetti()},1000);
+}
+$('mouths').addEventListener('click',function(e){var b=e.target.closest('.mcard');if(!b)return;pick(+b.dataset.i)});
+$('bNew').addEventListener('click',start);$('again').addEventListener('click',start);
+wireSound($('snd'));
+start();window.__S=S;
+
+})();
+</script>
+</body>
+</html>
